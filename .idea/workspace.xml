@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="GradleLocalSettings">
+    <option name="projectSyncType">
+      <map>
+        <entry key="$PROJECT_DIR$/../Raicoone" value="PREVIEW" />
+        <entry key="$PROJECT_DIR$/../Raicoone2" value="PREVIEW" />
+        <entry key="$PROJECT_DIR$/../model-cache" value="PREVIEW" />
+        <entry key="$PROJECT_DIR$/../objectboxapp" value="PREVIEW" />
+        <entry key="$PROJECT_DIR$/../projekt-cache" value="PREVIEW" />
+      </map>
+    </option>
+  </component>
+  <component name="ProjectFrameBounds" extendedState="6">
+    <option name="x" value="-2" />
+    <option name="y" value="25" />
+    <option name="width" value="1370" />
+    <option name="height" value="750" />
+  </component>
+  <component name="VcsContentAnnotationSettings">
+    <option name="myLimit" value="2678400000" />
+  </component>
+</project>
