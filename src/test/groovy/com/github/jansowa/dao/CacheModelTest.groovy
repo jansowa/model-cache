@@ -29,7 +29,7 @@ abstract class CacheModelTest extends Specification{
     void "Should upload file"()
     {
         when:
-            cacheModel.put(sampleData[0].getFilePath(), sampleData[0])
+            cacheModel.put(sampleData[0])
 
         then:
             cacheModel.contains(sampleData[0].getFilePath())
@@ -38,7 +38,7 @@ abstract class CacheModelTest extends Specification{
     void "Should delete uploaded file"()
     {
         given:
-            cacheModel.put(sampleData[0].getFilePath(), sampleData[0])
+            cacheModel.put(sampleData[0])
 
         when:
             cacheModel.remove(sampleData[0].getFilePath())
@@ -50,7 +50,7 @@ abstract class CacheModelTest extends Specification{
     void "Should read file"()
     {
         given:
-            cacheModel.put(sampleData[0].getFilePath(), sampleData[0])
+            cacheModel.put(sampleData[0])
         when:
             Optional<FileBasicInfo> downloadedInfo = cacheModel.read(sampleData[0].getFilePath())
         then:
@@ -72,7 +72,7 @@ abstract class CacheModelTest extends Specification{
     void "Contain method should return true if model contains file"()
     {
         given:
-            cacheModel.put(sampleData[0].getFilePath(), sampleData[0])
+            cacheModel.put(sampleData[0])
 
         when:
             boolean result = cacheModel.contains(sampleData[0].getFilePath())
@@ -97,7 +97,7 @@ abstract class CacheModelTest extends Specification{
     {
         given:
             String destinationPath = "/test/destination"
-            cacheModel.put(sampleData[0].getFilePath(), sampleData[0])
+            cacheModel.put(sampleData[0])
 
         when:
             cacheModel.movePath(sampleData[0].getFilePath(), destinationPath)
@@ -121,7 +121,7 @@ abstract class CacheModelTest extends Specification{
 
             for(int i=0; i<5; i++){
                 generatedFile = generateFileBasicInfo("file"+i, sourceFolder +paths[i])
-                cacheModel.put(generatedFile.getFilePath(), generatedFile)
+                cacheModel.put(generatedFile)
             }
 
         when:
@@ -138,9 +138,9 @@ abstract class CacheModelTest extends Specification{
     void "Should get number of stored files"()
     {
         given:
-            cacheModel.put(sampleData[0].getFilePath(), sampleData[0])
-            cacheModel.put(sampleData[1].getFilePath(), sampleData[1])
-            cacheModel.put(sampleData[2].getFilePath(), sampleData[2])
+            cacheModel.put(sampleData[0])
+            cacheModel.put(sampleData[1])
+            cacheModel.put(sampleData[2])
 
         when:
             int numberOfFiles = cacheModel.getNumberOfFiles()
@@ -152,8 +152,8 @@ abstract class CacheModelTest extends Specification{
     void "Should remove all data"()
     {
         given:
-            cacheModel.put(sampleData[0].getFilePath(), sampleData[0])
-            cacheModel.put(sampleData[1].getFilePath(), sampleData[1])
+            cacheModel.put(sampleData[0])
+            cacheModel.put(sampleData[1])
 
         when:
             cacheModel.removeAllData()

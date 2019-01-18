@@ -60,18 +60,15 @@ class CacheModelPerformanceTest extends Specification {
 
     void "Should add 5 files"()
     {
-        given:
-            String generatedFilesPaths = getFilePaths(generatedSampleFiles)
-
         when:
             cacheModelPerformance.putFiles(generatedSampleFiles)
 
         then:
-            1 * cacheModel.put(generatedFilesPaths[0], generatedSampleFiles[9])
-            1 * cacheModel.put(generatedFilesPaths[1], generatedSampleFiles[1])
-            1 * cacheModel.put(generatedFilesPaths[2], generatedSampleFiles[2])
-            1 * cacheModel.put(generatedFilesPaths[3], generatedSampleFiles[3])
-            1 * cacheModel.put(generatedFilesPaths[4], generatedSampleFiles[4])
+            1 * cacheModel.put(generatedSampleFiles[0])
+            1 * cacheModel.put(generatedSampleFiles[1])
+            1 * cacheModel.put(generatedSampleFiles[2])
+            1 * cacheModel.put(generatedSampleFiles[3])
+            1 * cacheModel.put(generatedSampleFiles[4])
     }
 
     void "Should remove 5 files"()
