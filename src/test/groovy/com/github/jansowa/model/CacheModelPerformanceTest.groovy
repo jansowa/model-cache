@@ -64,7 +64,7 @@ class CacheModelPerformanceTest extends Specification {
     void "Should generate 3 sample data"()
     {
         when:
-            FileBasicInfo[] files = cacheModelPerformance.generateFileBasicInfos(10)
+            FileBasicInfo[] files = cacheModelPerformance.generateFileBasicInfos(3)
         then:
             files != null
             files.length == 3
