@@ -10,6 +10,12 @@ class CacheModelPerformanceTest extends Specification {
     CacheModelPerformance cacheModelPerformance
     @Shared FileBasicInfo[] generatedSampleFiles
 
+    def setup()
+    {
+        cacheModel = Mock()
+        cacheModelPerformance = new CacheModelPerformance(cacheModel)
+    }
+
     def setupSpec() {
         generatedSampleFiles = new FileBasicInfo[5] //don't change number of files under 5 - it would broke tests
         Date creationDate
@@ -17,12 +23,6 @@ class CacheModelPerformanceTest extends Specification {
             creationDate = new Date()
             generatedSampleFiles[i] = new FileBasicInfo("file" + 1, "/test/file" + i + ".txt", "txt", "http://example.com/test/file" + i + ".txt", creationDate, creationDate)
         }
-    }
-
-    def setup()
-    {
-        cacheModel = Mock()
-        cacheModelPerformance = new CacheModelPerformance(cacheModel)
     }
 
     String[] getFilePaths(FileBasicInfo[] files){
@@ -34,16 +34,31 @@ class CacheModelPerformanceTest extends Specification {
         return paths
     }
 
-    void "Should return time between startStoper and checkTime"()
+    String addTextToPath(String path, String textToAdd){
+        return path.substring(0, 1) +
+                        textToAdd +
+                        path.substring(1, path.length())
+    }
+
+    boolean areAllFieldsNotNull(FileBasicInfo file){
+        return file.lastModifiedTime != null &&
+                file.creationTime != null &&
+                file.name != null &&
+                file.extension != null &&
+                file.url != null &&
+                file.filePath != null
+    }
+
+    void "Should return time between startStopwatch and checkStopwatchTimeInMilis"()
     {
         given:
-            cacheModelPerformance.startStoper()
-
+            cacheModelPerformance.startStopwatch()
+            Thread.sleep(1000)
         when:
-            long time = cacheModelPerformance.checkTimeInMilis()
+            long time = cacheModelPerformance.checkStopwatchTimeInMilis()
 
         then:
-            time>0
+            time>=1000
     }
 
     void "Should generate 3 sample data"()
@@ -54,6 +69,7 @@ class CacheModelPerformanceTest extends Specification {
             files != null
             files.length == 3
             files[0] != null
+            areAllFieldsNotNull(files[0])
             files[1] != null
             files[2] != null
     }
@@ -94,12 +110,8 @@ class CacheModelPerformanceTest extends Specification {
             cacheModelPerformance.putFiles(generatedSampleFiles)
             String[] sourcePaths = getFilePaths(generatedSampleFiles)
             String[] destinationPaths = new String[sourcePaths.length]
-            for(int i=0; i<5; i++){
-                destinationPaths[i] =
-                        sourcePaths[i].substring(0, 1) +
-                                "a" +
-                                sourcePaths[i].substring(1, sourcePaths[i].length())
-            }
+            for(int i=0; i<5; i++)
+                destinationPaths[i] = addTextToPath(sourcePaths[i], "a")
 
         when:
             cacheModelPerformance.moveFiles(sourcePaths, destinationPaths)
@@ -120,15 +132,18 @@ class CacheModelPerformanceTest extends Specification {
             cacheModel = Stub(CacheModel.class)
 
         and:
-            for(int i=0; i<5; i++) {
-                cacheModel.read(generatedFilePaths[i]) >> generatedSampleFiles[i]
-            }
+            for(int i=0; i<5; i++)
+                cacheModel.read(generatedFilePaths[i]) >> Optional.ofNullable(generatedSampleFiles[i])
 
         when:
-            FileBasicInfo[] filesInfo = cacheModelPerformance.readFiles(generatedFilePaths)
+            Optional<FileBasicInfo>[] filesInfo = cacheModelPerformance.readFiles(generatedFilePaths)
 
         then:
-            filesInfo == generatedSampleFiles
+            filesInfo[0].get() == generatedSampleFiles[0]
+            filesInfo[1].get() == generatedSampleFiles[1]
+            filesInfo[2].get() == generatedSampleFiles[2]
+            filesInfo[3].get() == generatedSampleFiles[3]
+            filesInfo[4].get() == generatedSampleFiles[4]
     }
 
     void "Should check if memory contains 5 specific files"()
@@ -138,13 +153,14 @@ class CacheModelPerformanceTest extends Specification {
 
         when:
             cacheModelPerformance.containFiles(sampleFilesPaths)
-
+            boolean[] emptyPaths = cacheModelPerformance.containFiles(['randomPath1', 'randomPath2'] as String[])
         then:
             1 * cacheModel.contains(sampleFilesPaths[0])
             1 * cacheModel.contains(sampleFilesPaths[1])
             1 * cacheModel.contains(sampleFilesPaths[2])
             1 * cacheModel.contains(sampleFilesPaths[3])
             1 * cacheModel.contains(sampleFilesPaths[4])
+            emptyPaths == [false, false] as boolean[]
     }
 
     void "Should return number of files"()
