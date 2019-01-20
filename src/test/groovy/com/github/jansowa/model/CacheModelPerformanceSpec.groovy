@@ -5,7 +5,7 @@ import com.github.jansowa.domain.FileBasicInfo
 import spock.lang.Shared
 import spock.lang.Specification
 
-class CacheModelPerformanceTest extends Specification {
+class CacheModelPerformanceSpec extends Specification {
     CacheModel cacheModel
     CacheModelPerformance cacheModelPerformance
     @Shared FileBasicInfo[] generatedSampleFiles
