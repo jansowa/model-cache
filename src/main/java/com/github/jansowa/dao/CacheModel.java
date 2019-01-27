@@ -12,4 +12,5 @@ public interface CacheModel {
     Optional<FileBasicInfo> read(String filePath);
     int getNumberOfFiles();
     void removeAllData();
+    double getSizeInBytes();
 }

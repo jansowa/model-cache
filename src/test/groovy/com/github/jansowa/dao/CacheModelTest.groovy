@@ -3,7 +3,7 @@ package com.github.jansowa.dao
 import com.github.jansowa.domain.FileBasicInfo
 import spock.lang.Shared
 import spock.lang.Specification
-abstract class CacheModelTest extends Specification{
+abstract class CacheModelSpec extends Specification{
     @Shared CacheModel cacheModel
     @Shared private FileBasicInfo[] sampleData
 
@@ -162,5 +162,15 @@ abstract class CacheModelTest extends Specification{
             !cacheModel.contains(sampleData[0].getFilePath())
             !cacheModel.contains(sampleData[1].getFilePath())
             cacheModel.getNumberOfFiles()==0
+    }
+
+    void "Should get size of cache model in bytes"()
+    {
+        given:
+            cacheModel.put(sampleData[0])
+        when:
+            double size = cacheModel.getSizeInBytes()
+        then:
+            size>0
     }
 }
