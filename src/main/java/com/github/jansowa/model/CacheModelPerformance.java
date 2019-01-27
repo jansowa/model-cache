@@ -5,8 +5,9 @@ import com.github.jansowa.domain.FileBasicInfo;
 import lombok.NonNull;
 import lombok.RequiredArgsConstructor;
 
-import java.util.Date;
-import java.util.Optional;
+import java.util.*;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 class CacheModelPerformance {
@@ -58,12 +59,12 @@ class CacheModelPerformance {
             cacheModel.movePath(sourcePaths[i], destinationPaths[i]);
     }
 
-    public Optional<FileBasicInfo>[] readFiles(String[] paths) {
-        int numberOfFiles = paths.length;
-        Optional<FileBasicInfo>[] downloadedFiles = new Optional[numberOfFiles];
-        for(int i=0; i<numberOfFiles; i++)
-            downloadedFiles[i] = cacheModel.read(paths[i]);
-        return downloadedFiles;
+    public List<FileBasicInfo> readFiles(String[] paths) {
+        List<String> pathsList = Arrays.asList(paths);
+        return pathsList.stream().map(path -> cacheModel.read(path))
+                .filter(Optional::isPresent)
+                .map(Optional::get)
+                .collect(Collectors.toList());
     }
 
     public boolean[] containFiles(String[] paths) {

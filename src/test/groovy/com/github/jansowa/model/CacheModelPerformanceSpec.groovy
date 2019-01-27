@@ -129,21 +129,19 @@ class CacheModelPerformanceSpec extends Specification {
         given:
             String[] generatedFilePaths = getFilePaths(generatedSampleFiles)
             cacheModelPerformance.putFiles(generatedSampleFiles)
-            cacheModel = Stub(CacheModel.class)
 
         and:
             for(int i=0; i<5; i++)
                 cacheModel.read(generatedFilePaths[i]) >> Optional.ofNullable(generatedSampleFiles[i])
 
         when:
-            Optional<FileBasicInfo>[] filesInfo = cacheModelPerformance.readFiles(generatedFilePaths)
-
+            List<FileBasicInfo> filesInfo = cacheModelPerformance.readFiles(generatedFilePaths)
         then:
-            filesInfo[0].get() == generatedSampleFiles[0]
-            filesInfo[1].get() == generatedSampleFiles[1]
-            filesInfo[2].get() == generatedSampleFiles[2]
-            filesInfo[3].get() == generatedSampleFiles[3]
-            filesInfo[4].get() == generatedSampleFiles[4]
+            filesInfo.get(0) == generatedSampleFiles[0]
+            filesInfo.get(1) == generatedSampleFiles[1]
+            filesInfo.get(2) == generatedSampleFiles[2]
+            filesInfo.get(3) == generatedSampleFiles[3]
+            filesInfo.get(4) == generatedSampleFiles[4]
     }
 
     void "Should check if memory contains 5 specific files"()
