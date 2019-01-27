@@ -36,7 +36,7 @@ class CacheModelPerformance {
         return FileBasicInfo.builder()
                 .filePath("generatedFiles/file"+number+".txt")
                 .creationTime(creationTime)
-                .lastModifiedTime(creationTime)
+                .lastUsageTime(creationTime)
                 .extension("txt")
                 .name("file"+number)
                 .url("http://example.com/generatedFiles/file"+number+".txt")

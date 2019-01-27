@@ -41,7 +41,7 @@ class CacheModelPerformanceSpec extends Specification {
     }
 
     boolean areAllFieldsNotNull(FileBasicInfo file){
-        return file.lastModifiedTime != null &&
+        return file.lastUsageTime != null &&
                 file.creationTime != null &&
                 file.name != null &&
                 file.extension != null &&
