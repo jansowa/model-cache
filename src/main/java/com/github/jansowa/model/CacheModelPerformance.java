@@ -7,7 +7,6 @@ import lombok.RequiredArgsConstructor;
 
 import java.util.*;
 import java.util.stream.Collectors;
-import java.util.stream.Stream;
 
 @RequiredArgsConstructor
 class CacheModelPerformance {
@@ -78,5 +77,9 @@ class CacheModelPerformance {
 
     public int getNumberOfFiles() {
         return cacheModel.getNumberOfFiles();
+    }
+
+    public CacheModel getCacheModel(){
+        return cacheModel;
     }
 }

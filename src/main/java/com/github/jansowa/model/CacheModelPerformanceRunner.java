@@ -5,17 +5,17 @@ import com.github.jansowa.domain.FileBasicInfo;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Logger;
 
 public class CacheModelPerformanceRunner {
     private CacheModelPerformance cacheModelPerformance;
 
     class TimeResults{
-        public long putTestTime;
-        public long containTestTime;
-        public long removeTestTime;
-        public long moveTestTime;
-        public long readTestTime;
+        long putTestTime;
+        long containTestTime;
+        long removeTestTime;
+        long moveTestTime;
+        long readTestTime;
+        long sizeOfFiles;
     }
 
     public static void main(String[] args){
@@ -38,8 +38,9 @@ public class CacheModelPerformanceRunner {
             timeResults.putTestTime = timeOfPutFiles(numberOfTests);
             timeResults.containTestTime = timeOfContainFiles(numberOfTests);
             timeResults.removeTestTime = timeOfRemoveFiles(numberOfTests);
-            timeResults.moveTestTime = timeOfMoveFiles(numberOfTests);
+            timeResults.moveTestTime = timeOfMoveSingleFiles(numberOfTests);
             timeResults.readTestTime = timeOfReadFiles(numberOfTests);
+            timeResults.sizeOfFiles = sizeOfFiles(numberOfTests);
 
             allTimeResults.add(timeResults);
         }
@@ -51,21 +52,22 @@ public class CacheModelPerformanceRunner {
         int numberOfResults = timeResults.size();
         final String timeMessage= "ms for tests of method ";
 
-        Logger logger = Logger.getLogger("printResult");
         for(int i=0; i<numberOfResults; i++){
-            logger.info("Results of " + cacheModelsNames.get(i) + " for " + numberOfTests + " operations:");
-            logger.info(timeMessage + timeResults.get(i).putTestTime);
-            logger.info(timeMessage + timeResults.get(i).containTestTime);
-            logger.info(timeMessage + timeResults.get(i).removeTestTime);
-            logger.info(timeMessage + timeResults.get(i).moveTestTime);
-            logger.info(timeMessage + timeResults.get(i).readTestTime);
-            logger.info("Summary: "
+            System.out.println("Results of " + cacheModelsNames.get(i) + " for " + numberOfTests + " operations:");
+            System.out.println(timeResults.get(i).putTestTime + timeMessage + "put");
+            System.out.println(timeResults.get(i).containTestTime + timeMessage + "contain");
+            System.out.println(timeResults.get(i).removeTestTime + timeMessage + "remove");
+            System.out.println(timeResults.get(i).moveTestTime + timeMessage + "move");
+            System.out.println(timeResults.get(i).readTestTime + timeMessage + "read");
+            System.out.println("Summary: "
                     +
                     (timeResults.get(i).putTestTime +
                             timeResults.get(i).containTestTime +
                             timeResults.get(i).removeTestTime +
                             timeResults.get(i).moveTestTime +
-                            timeResults.get(i).readTestTime));
+                            timeResults.get(i).readTestTime) + "ms");
+            System.out.println("Size of "+numberOfTests+" files in bytes: "+timeResults.get(i).sizeOfFiles);
+            System.out.println();
         }
     }
 
@@ -73,7 +75,9 @@ public class CacheModelPerformanceRunner {
         FileBasicInfo[] generatedFiles = cacheModelPerformance.generateFileBasicInfos(numberOfFiles);
         cacheModelPerformance.startStopwatch();
         cacheModelPerformance.putFiles(generatedFiles);
-        return cacheModelPerformance.checkStopwatchTimeInMilis();
+        long testTime = cacheModelPerformance.checkStopwatchTimeInMilis();
+        cacheModelPerformance.getCacheModel().removeAllData();
+        return testTime;
     }
 
     private long timeOfContainFiles(int numberOfFiles){
@@ -82,7 +86,9 @@ public class CacheModelPerformanceRunner {
         String[] filesPaths = getPathsFromFiles(generatedFiles);
         cacheModelPerformance.startStopwatch();
         cacheModelPerformance.containFiles(filesPaths);
-        return cacheModelPerformance.checkStopwatchTimeInMilis();
+        long testTime = cacheModelPerformance.checkStopwatchTimeInMilis();
+        cacheModelPerformance.getCacheModel().removeAllData();
+        return testTime;
     }
 
     private long timeOfRemoveFiles(int numberOfFiles){
@@ -94,7 +100,7 @@ public class CacheModelPerformanceRunner {
         return cacheModelPerformance.checkStopwatchTimeInMilis();
     }
 
-    private long timeOfMoveFiles(int numberOfFiles){
+    private long timeOfMoveSingleFiles(int numberOfFiles){
         FileBasicInfo[] generatedFiles = cacheModelPerformance.generateFileBasicInfos(numberOfFiles);
         cacheModelPerformance.putFiles(generatedFiles);
         String[] sourcePaths = getPathsFromFiles(generatedFiles);
@@ -106,7 +112,9 @@ public class CacheModelPerformanceRunner {
 
         cacheModelPerformance.startStopwatch();
         cacheModelPerformance.moveFiles(sourcePaths, destinationPaths);
-        return cacheModelPerformance.checkStopwatchTimeInMilis();
+        long testTime = cacheModelPerformance.checkStopwatchTimeInMilis();
+        cacheModelPerformance.getCacheModel().removeAllData();
+        return testTime;
     }
 
     private long timeOfReadFiles(int numberOfFiles){
@@ -115,7 +123,17 @@ public class CacheModelPerformanceRunner {
         String[] filesPaths = getPathsFromFiles(generatedFiles);
         cacheModelPerformance.startStopwatch();
         cacheModelPerformance.readFiles(filesPaths);
-        return cacheModelPerformance.checkStopwatchTimeInMilis();
+        long testTime = cacheModelPerformance.checkStopwatchTimeInMilis();
+        cacheModelPerformance.getCacheModel().removeAllData();
+        return testTime;
+    }
+
+
+
+    private long sizeOfFiles(int numberOfFiles){
+        FileBasicInfo[] generatedFiles = cacheModelPerformance.generateFileBasicInfos(numberOfFiles);
+        cacheModelPerformance.putFiles(generatedFiles);
+        return cacheModelPerformance.getCacheModel().getSizeInBytes();
     }
 
     private String[] getPathsFromFiles(FileBasicInfo[] files){
@@ -127,7 +145,7 @@ public class CacheModelPerformanceRunner {
         return paths;
     }
 
-    String addTextToPath(String path){
+    private String addTextToPath(String path){
         return path.substring(0, 1) +
                 "a" +
                 path.substring(1, path.length());
