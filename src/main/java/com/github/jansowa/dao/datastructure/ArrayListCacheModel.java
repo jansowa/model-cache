@@ -2,43 +2,39 @@ package com.github.jansowa.dao.datastructure;
 
 import com.github.jansowa.dao.CacheModel;
 import com.github.jansowa.domain.FileBasicInfo;
+import lombok.Getter;
 
 import java.io.*;
 
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Optional;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
-//TODO(1) obsługa braku pliku
 public class ArrayListCacheModel implements CacheModel, Serializable {
-    private double maxStorageMB;
+    @Getter private long maxNumberOfFiles;
     private String cacheModelPath;
     private ArrayList<FileBasicInfo> storedFiles;
 
-    public ArrayListCacheModel(double maxStorageMB, String cacheModelPath){
-        this.maxStorageMB = maxStorageMB;
+    public ArrayListCacheModel(long maxNumberOfFiles, String cacheModelPath){
+        this.maxNumberOfFiles = maxNumberOfFiles;
         this.cacheModelPath = cacheModelPath;
-        this.storedFiles = new ArrayList<>();
-    }
-
-    public ArrayListCacheModel(){
-        this.maxStorageMB = 0;
-        this.cacheModelPath = "";
         this.storedFiles = new ArrayList<>();
     }
 
     @Override
     public void put(FileBasicInfo file) {
         storedFiles.add(file);
-        while(getSizeInBytes()>1048576*maxStorageMB){
+        if (getNumberOfFiles() > getMaxNumberOfFiles()){
             storedFiles.remove(0);
+            saveData();
         }
         saveData();
     }
 
     @Override
-    public double getSizeInBytes(){
+    public long getSizeInBytes(){
         File cacheModel = new File(cacheModelPath);
         return cacheModel.length();
     }
@@ -67,7 +63,6 @@ public class ArrayListCacheModel implements CacheModel, Serializable {
 
     @Override
     public void movePath(String sourcePath, String destinationPath) {
-        //TODO add implementation for whole folder
         int index = findIndexByPath(sourcePath);
         if (index>0) {
             moveSingleFile(destinationPath, index);
@@ -106,7 +101,8 @@ public class ArrayListCacheModel implements CacheModel, Serializable {
     public void removeFromDevice(){
         File cacheModel = new File(cacheModelPath);
         if(!cacheModel.delete()){
-            System.out.println("File "+cacheModelPath+" doesn't exist!");
+            Logger logger = Logger.getLogger("removeFromDevice logger");
+            logger.log(Level.INFO, "File {0} doesn't exist!", cacheModelPath);
         }
     }
 
@@ -133,8 +129,8 @@ public class ArrayListCacheModel implements CacheModel, Serializable {
         }
     }
 
-    public void setMaxStorageMB(double maxStorageMB){
-        this.maxStorageMB = maxStorageMB;
+    public void setMaxNumberOfFiles(long maxNumberOfFiles){
+        this.maxNumberOfFiles = maxNumberOfFiles;
         saveData();
     }
     public void setCacheModelPath(String cacheModelPath){
@@ -171,7 +167,7 @@ public class ArrayListCacheModel implements CacheModel, Serializable {
             String singleFilePath = storedFiles
                     .get(i)
                     .getFilePath();
-            if(singleFilePath
+            if(singleFilePath.length()>=sourcePathLength && singleFilePath
                     .substring(0, sourcePathLength)
                     .equals(sourcePath)){
                 moveSingleFile(destinationPath+

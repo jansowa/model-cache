@@ -7,7 +7,7 @@ import spock.lang.Specification
 class HashMapCacheModelSpec extends Specification{
     @Shared HashMapCacheModel cacheModel
     @Shared private FileBasicInfo[] sampleData
-    static final double MAX_STORAGE = 2
+    static final long MAX_FILES = 100
     static final String CACHE_PATH = "HashMapCacheModelTest.ser"
 
     def setupSpec()
@@ -20,7 +20,7 @@ class HashMapCacheModelSpec extends Specification{
 
     def setup()
     {
-        cacheModel = new HashMapCacheModel(MAX_STORAGE, CACHE_PATH)
+        cacheModel = new HashMapCacheModel(MAX_FILES, CACHE_PATH)
     }
 
     def cleanup()
@@ -190,7 +190,7 @@ class HashMapCacheModelSpec extends Specification{
         cacheModel.put(sampleData[0])
         cacheModel.put(sampleData[1])
         cacheModel.saveData()
-        HashMapCacheModel loadedCacheModel = new HashMapCacheModel(MAX_STORAGE, CACHE_PATH)
+        HashMapCacheModel loadedCacheModel = new HashMapCacheModel(MAX_FILES, CACHE_PATH)
         when:
         loadedCacheModel.loadData()
         then:

@@ -1,6 +1,6 @@
 package com.github.jansowa.dao.datastructure
 
-import com.github.jansowa.dao.CacheModel
+
 import com.github.jansowa.domain.FileBasicInfo
 import spock.lang.Shared
 import spock.lang.Specification
@@ -8,7 +8,7 @@ import spock.lang.Specification
 class ArrayListCacheModelSpec extends Specification{
     @Shared ArrayListCacheModel cacheModel
     @Shared private FileBasicInfo[] sampleData
-    static final double MAX_STORAGE = 2
+    static final long MAX_FILES = 1000
     static final String CACHE_PATH = "ArrayListCacheModelTest.ser"
 
     def setupSpec()
@@ -21,7 +21,7 @@ class ArrayListCacheModelSpec extends Specification{
 
     def setup()
     {
-        cacheModel = new ArrayListCacheModel(MAX_STORAGE, CACHE_PATH)
+        cacheModel = new ArrayListCacheModel(MAX_FILES, CACHE_PATH)
     }
 
     def cleanup()
@@ -164,6 +164,9 @@ class ArrayListCacheModelSpec extends Specification{
             int numberOfFiles = cacheModel.getNumberOfFiles()
 
         then:
+            //cacheModel.contains(sampleData[0].filePath)
+            cacheModel.contains(sampleData[1].filePath)
+            cacheModel.contains(sampleData[2].filePath)
             numberOfFiles == 3
     }
 
@@ -200,7 +203,7 @@ class ArrayListCacheModelSpec extends Specification{
             cacheModel.put(sampleData[0])
             cacheModel.put(sampleData[1])
             cacheModel.saveData()
-            ArrayListCacheModel loadedCacheModel = new ArrayListCacheModel(MAX_STORAGE, CACHE_PATH)
+            ArrayListCacheModel loadedCacheModel = new ArrayListCacheModel(MAX_FILES, CACHE_PATH)
         when:
             loadedCacheModel.loadData()
         then:

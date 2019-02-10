@@ -12,5 +12,8 @@ public interface CacheModel {
     Optional<FileBasicInfo> read(String filePath);
     int getNumberOfFiles();
     void removeAllData();
-    double getSizeInBytes();
+    long getSizeInBytes();
+    long getMaxNumberOfFiles();
+    void setMaxNumberOfFiles(long maxStorage);
+    void removeFromDevice();
 }

@@ -2,20 +2,20 @@ package com.github.jansowa.dao.datastructure;
 
 import com.github.jansowa.dao.CacheModel;
 import com.github.jansowa.domain.FileBasicInfo;
+import lombok.Getter;
+import lombok.Setter;
 
 import java.io.*;
 import java.util.*;
 import java.util.logging.Logger;
 
-
-//TODO(IMPORTANT!!!) serialize data like in ArrayListCacheModel! Make save and load protected functions!
 public class HashMapCacheModel implements CacheModel, Serializable{
-    private transient double maxStorageMB;
-    private transient String cacheModelPath;
+    @Getter @Setter private long maxNumberOfFiles;
+    private String cacheModelPath;
     private HashMap<String, FileBasicInfo> storedFiles;
 
-    public HashMapCacheModel(double maxStorageMB, String cacheModelPath){
-        this.maxStorageMB = maxStorageMB;
+    public HashMapCacheModel(long maxNumberOfFiles, String cacheModelPath){
+        this.maxNumberOfFiles = maxNumberOfFiles;
         this.cacheModelPath = cacheModelPath;
         this.storedFiles = new HashMap<>();
     }
@@ -23,8 +23,9 @@ public class HashMapCacheModel implements CacheModel, Serializable{
     @Override
     public void put(FileBasicInfo file) {
         storedFiles.put(file.getFilePath(), file);
-        while(getSizeInBytes()>1048576*maxStorageMB)
-            remove(findEldestFile());
+        if(getNumberOfFiles()>getMaxNumberOfFiles()) {
+            remove(findOldestFile());
+        }
         saveData();
     }
 
@@ -78,7 +79,7 @@ public class HashMapCacheModel implements CacheModel, Serializable{
         downloadedFile.withLastUsageTime(new Date());
         storedFiles.remove(filePath);
         storedFiles.put(filePath, downloadedFile);
-        return Optional.ofNullable(storedFiles.get(filePath)); //TODO what if filePath empty?
+        return Optional.ofNullable(storedFiles.get(filePath));
     }
 
     @Override
@@ -92,7 +93,7 @@ public class HashMapCacheModel implements CacheModel, Serializable{
     }
 
     @Override
-    public double getSizeInBytes(){
+    public long getSizeInBytes(){
         File cacheModel = new File(cacheModelPath);
         return cacheModel.length();
     }
@@ -127,15 +128,15 @@ public class HashMapCacheModel implements CacheModel, Serializable{
         }
     }
 
-    private String findEldestFile(){
-        Date eldestDate = new Date(2200, 1, 1);
-        String pathOfEldestFile = null;
+    private String findOldestFile(){
+        Date oldestDate = new Date(2200, 1, 1);
+        String pathOfOldestFile = null;
         for (FileBasicInfo file: storedFiles.values()) {
-            if(file.getLastUsageTime().getTime()<eldestDate.getTime()){
-                eldestDate = file.getLastUsageTime();
-                pathOfEldestFile = file.getFilePath();
+            if(file.getLastUsageTime().getTime()<oldestDate.getTime()){
+                oldestDate = file.getLastUsageTime();
+                pathOfOldestFile = file.getFilePath();
             }
         }
-        return pathOfEldestFile;
+        return pathOfOldestFile;
     }
 }
