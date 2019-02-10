@@ -1,6 +1,9 @@
 package com.github.jansowa.model;
 
 import com.github.jansowa.dao.CacheModel;
+import com.github.jansowa.dao.datastructure.ArrayListCacheModel;
+import com.github.jansowa.dao.datastructure.HashMapCacheModel;
+import com.github.jansowa.dao.relationaldb.SQLiteCacheModel1;
 import com.github.jansowa.domain.FileBasicInfo;
 
 import java.util.ArrayList;
@@ -23,9 +26,26 @@ public class CacheModelPerformanceRunner {
         List<String> cacheModelsNames = new ArrayList<>();
         List<CacheModel> cacheModels = new ArrayList<>();
         //TODO Here I will add all cache models and its names
-        int numberOfTests = 1000;
+
+        cacheModelsNames.add("Array List cache");
+        ArrayListCacheModel arrayListCache = new ArrayListCacheModel(1000, "arrayList.ser");
+        cacheModels.add(arrayListCache);
+
+        cacheModelsNames.add("Hash map cache");
+        HashMapCacheModel hashMapCache = new HashMapCacheModel(1000, "hashMap.ser");
+        cacheModels.add(hashMapCache);
+
+        cacheModelsNames.add("Sqlite all files in one table");
+        SQLiteCacheModel1 sqliteCacheModel1 = new SQLiteCacheModel1(1000, "sqlite1.db");
+        cacheModels.add(sqliteCacheModel1);
+
+        int numberOfTests = 100;
         List<TimeResults> allTimeResults = runner.runTestForAllCache(cacheModels, numberOfTests);
         runner.printResults(allTimeResults, cacheModelsNames, numberOfTests);
+
+        arrayListCache.removeFromDevice();
+        hashMapCache.removeFromDevice();
+        sqliteCacheModel1.removeFromDevice();
     }
 
     private List<TimeResults> runTestForAllCache(List<CacheModel> allCacheModels, int numberOfTests){
