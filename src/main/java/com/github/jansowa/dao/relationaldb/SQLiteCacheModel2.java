@@ -102,7 +102,6 @@ public class SQLiteCacheModel2 implements CacheModel {
             createTableStatement = connection.prepareStatement(
                     "CREATE TABLE IF NOT EXISTS ?(id INTEGER PRIMARY KEY,"+
                             "name TEXT,"+
-                            "filePath TEXT,"+
                             "extension TEXT,"+
                             "url TEXT,"+
                             "creationTime INTEGER,"+
