@@ -214,4 +214,20 @@ class SQLiteCacheModel2Spec extends Specification{
         !cacheModel.contains(sampleData[0].filePath)
         cacheModel.getNumberOfFiles()==1
     }
+
+    void "Should return folder from three paths"()
+    {
+        given:
+        String path1 = "/first/second/file.txt"
+        String path2 = "/folder/test.jpg"
+        String path3 = "/src/main/java/main.java"
+        when:
+        String folder1 = cacheModel.getFolderFromPath(path1)
+        String folder2 = cacheModel.getFolderFromPath(path2)
+        String folder3 = cacheModel.getFolderFromPath(path3)
+        then:
+        folder1 == "/first/second"
+        folder2 == "/folder"
+        folder3 == "/src/main/java"
+    }
 }
