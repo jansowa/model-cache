@@ -34,7 +34,14 @@ public class SQLiteCacheModel2 implements CacheModel {
 
     @Override
     public void remove(String filePath) {
-
+        getConnection();
+        PreparedStatement removeStatement = null;
+        try{
+            removeStatement = connection.prepareStatement(
+                    "DELETE FROM ? "+
+                    "WHERE filePath = ?");
+            removeStatement.setString(1, getFolderFromPath(filePath));
+        }
     }
 
     @Override
