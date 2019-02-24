@@ -22,7 +22,7 @@ import java.util.logging.Logger;
 //All data in one table
 public class SQLiteCacheModel1 implements CacheModel {
     @Getter @Setter private long maxNumberOfFiles;
-    private String cacheModelPath;
+    private String cacheModelPath; //TODO fix - cacheModelPath now can't include slash
     private Connection connection;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
 
@@ -55,19 +55,10 @@ public class SQLiteCacheModel1 implements CacheModel {
                 removeOldestFile();
             }
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("putFile");
-            logger.warning(e.toString());
+            log(e);
         } finally {
-            try {
-                if(putStatement!=null) {
-                    putStatement.close();
-                }
-                connection.close();
-            } catch (SQLException e) {
-                Logger logger = Logger.getLogger("putFile method logger");
-                logger.warning(e.toString());
-            }
-
+            SQLiteHelper.close(putStatement);
+            SQLiteHelper.close(connection);
         }
 
     }
@@ -84,18 +75,10 @@ public class SQLiteCacheModel1 implements CacheModel {
                             "FROM files)"
             );
         } catch (SQLException e){
-            Logger logger = Logger.getLogger("removeOldestFile method logger");
-            logger.warning(e.toString());
+            log(e);
         } finally {
-            try {
-                if (removeStatement != null) {
-                    removeStatement.close();
-                }
-                connection.close();
-            } catch (SQLException e){
-                Logger logger = Logger.getLogger("removeOldestFile method logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(removeStatement);
+            SQLiteHelper.close(connection);
         }
     }
 
@@ -111,48 +94,30 @@ public class SQLiteCacheModel1 implements CacheModel {
             removeStatement.execute();
 
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("removeMethodLogger");
-            logger.warning(e.toString());
+            log(e);
         } finally{
-            try {
-                if (removeStatement != null) {
-                    removeStatement.close();
-                }
-                connection.close();
-            } catch(SQLException e){
-                Logger logger = Logger.getLogger("remove method logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(removeStatement);
+            SQLiteHelper.close(connection);
         }
     }
 
     @Override
     public boolean contains(String filePath) {
-        PreparedStatement containStatement = null;
+        PreparedStatement containsStatement = null;
         ResultSet filesWithGivenPath = null;
         getConnection();
         boolean isFileInDB = false;
         try {
-            containStatement = connection.prepareStatement("SELECT id FROM files WHERE filePath=?");
-            containStatement.setString(1, filePath);
-            filesWithGivenPath = containStatement.executeQuery();
+            containsStatement = connection.prepareStatement("SELECT id FROM files WHERE filePath=?");
+            containsStatement.setString(1, filePath);
+            filesWithGivenPath = containsStatement.executeQuery();
             isFileInDB = filesWithGivenPath.next();
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("containsLogger");
-            logger.warning("Can't execute SELECT statement on table 'files'");
+            log(e);
         } finally {
-            try {
-                if(containStatement != null) {
-                    containStatement.close();
-                }
-                if(filesWithGivenPath != null){
-                    filesWithGivenPath.close();
-                }
-                connection.close();
-            } catch(SQLException e){
-                Logger logger = Logger.getLogger("contains method logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(containsStatement);
+            SQLiteHelper.close(filesWithGivenPath);
+            SQLiteHelper.close(connection);
         }
         return isFileInDB;
     }
@@ -169,18 +134,10 @@ public class SQLiteCacheModel1 implements CacheModel {
                     " WHERE substr(filePath, 1, " + sourcePathLength +") = '"+sourcePath+"'");
 
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("movePath method logger");
-            logger.warning(e.toString());
+            log(e);
         } finally {
-            try{
-                if(moveStatement!=null){
-                    moveStatement.close();
-                }
-                connection.close();
-            } catch(SQLException e){
-                Logger logger = Logger.getLogger("movePath method logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(moveStatement);
+            SQLiteHelper.close(connection);
         }
     }
 
@@ -199,8 +156,8 @@ public class SQLiteCacheModel1 implements CacheModel {
             readedData = readStatement.executeQuery();
 
             if(readedData.next()){
-                Date readDate = new Date();
-                Date creationDate = new Date(readedData
+                Date lastUsageTime = new Date();
+                Date creationTime = new Date(readedData
                                 .getLong("creationTime"));
                 FileBasicInfo readedFile = FileBasicInfo
                         .builder()
@@ -208,30 +165,20 @@ public class SQLiteCacheModel1 implements CacheModel {
                         .filePath(readedData.getString("filePath"))
                         .extension(readedData.getString("extension"))
                         .url(readedData.getString("url"))
-                        .creationTime(creationDate)
-                        .lastUsageTime(readDate)
+                        .creationTime(creationTime)
+                        .lastUsageTime(lastUsageTime)
                         .build();
 
-                updateLastUsageTime(filePath, readDate);
+                updateLastUsageTime(filePath, lastUsageTime);
 
                 return Optional.ofNullable(readedFile);
             }
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("read method SQL logger");
-            logger.warning(e.toString());
+            log(e);
         } finally{
-            try{
-                if(readStatement != null){
-                    readStatement.close();
-                }
-                if(readedData != null){
-                    readedData.close();
-                }
-                connection.close();
-            } catch (SQLException e){
-                Logger logger = Logger.getLogger("read method logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(readStatement);
+            SQLiteHelper.close(readedData);
+            SQLiteHelper.close(connection);
         }
         return Optional.empty();
     }
@@ -247,17 +194,9 @@ public class SQLiteCacheModel1 implements CacheModel {
             updateTimeStatement.setString(2, filePath);
             updateTimeStatement.execute();
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("updateLastUsageTime method logger");
-            logger.warning(e.toString());
+            log(e);
         } finally {
-            try{
-                if(updateTimeStatement != null){
-                    updateTimeStatement.close();
-                }
-            } catch(SQLException e) {
-                Logger logger = Logger.getLogger("updateLastUsageTime logger");
-                logger.warning(readDate.toString());
-            }
+            SQLiteHelper.close(updateTimeStatement);
         }
     }
 
@@ -273,21 +212,11 @@ public class SQLiteCacheModel1 implements CacheModel {
             countResult.next();
             numberOfFiles = countResult.getInt(1);
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("getNumberOfFilesMethodLogger");
-            logger.warning(e.toString());
+            log(e);
         } finally {
-            try{
-                if(countStatement != null){
-                    countStatement.close();
-                }
-                if(countResult != null){
-                    countResult.close();
-                }
-                connection.close();
-            } catch (SQLException e){
-                Logger logger = Logger.getLogger("getNumberOfFiles logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(countStatement);
+            SQLiteHelper.close(countResult);
+            SQLiteHelper.close(connection);
         }
 
         return numberOfFiles;
@@ -302,18 +231,10 @@ public class SQLiteCacheModel1 implements CacheModel {
             removeAllStatement.execute("DROP TABLE files");
             initialise();
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("removeAllData method logger");
-            logger.warning(e.toString());
+            log(e);
         } finally{
-            try {
-                if (removeAllStatement != null) {
-                    removeAllStatement.close();
-                }
-                connection.close();
-            } catch (SQLException e){
-                Logger logger = Logger.getLogger("removeAllData method logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(removeAllStatement);
+            SQLiteHelper.close(connection);
         }
     }
 
@@ -338,8 +259,7 @@ public class SQLiteCacheModel1 implements CacheModel {
                 connection = DriverManager.getConnection("jdbc:sqlite:" + cacheModelPath);
             }
         } catch (ClassNotFoundException | SQLException e) {
-            Logger logger = Logger.getLogger("getConnectionLogger");
-            logger.warning(e.toString());
+            log(e);
         }
         initialise();
     }
@@ -356,17 +276,14 @@ public class SQLiteCacheModel1 implements CacheModel {
                                                     "creationTime INTEGER,"+
                                                     "lastUsageTime INTEGER);");
         } catch (SQLException e) {
-            Logger logger = Logger.getLogger("initialiseDbLogger");
-            logger.warning(e.toString());
+            log(e);
         } finally {
-            try {
-                if (createTableStatement != null) {
-                    createTableStatement.close();
-                }
-            } catch(SQLException e){
-                Logger logger = Logger.getLogger("initialise private method logger");
-                logger.warning(e.toString());
-            }
+            SQLiteHelper.close(createTableStatement);
         }
+    }
+
+    private void log(Exception e){
+        Logger logger = Logger.getLogger("SQLiteCacheModel1 logger");
+        logger.warning(e.toString());
     }
 }
