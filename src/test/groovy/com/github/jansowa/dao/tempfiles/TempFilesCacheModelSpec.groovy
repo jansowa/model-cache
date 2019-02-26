@@ -1,15 +1,14 @@
-package com.github.jansowa.dao.datastructure
-
-
+package com.github.jansowa.dao.tempfiles
 import com.github.jansowa.domain.FileBasicInfo
+
 import spock.lang.Shared
 import spock.lang.Specification
 
-class ArrayListCacheModelSpec extends Specification{
-    @Shared ArrayListCacheModel cacheModel
+class TempFilesCacheModelSpec extends Specification{
+    @Shared TempFilesCacheModel cacheModel
     @Shared private FileBasicInfo[] sampleData
     static final long MAX_FILES = 1000
-    static final String CACHE_PATH = "ArrayListCacheModelTest.ser"
+    static final String CACHE_PATH = "/TempFilesCacheModelTest/"
 
     def setupSpec()
     {
@@ -21,7 +20,7 @@ class ArrayListCacheModelSpec extends Specification{
 
     def setup()
     {
-        cacheModel = new ArrayListCacheModel(MAX_FILES, CACHE_PATH)
+        cacheModel = new TempFilesCacheModel(MAX_FILES, CACHE_PATH)
     }
 
     def cleanup()
@@ -61,8 +60,10 @@ class ArrayListCacheModelSpec extends Specification{
     {
         given:
             cacheModel.put(sampleData[0])
+
         when:
             Optional<FileBasicInfo> downloadedInfo = cacheModel.read(sampleData[0].getFilePath())
+
         then:
             downloadedInfo.get().creationTime == sampleData[0].creationTime
             downloadedInfo.get().name == sampleData[0].name
@@ -78,7 +79,7 @@ class ArrayListCacheModelSpec extends Specification{
             Optional<FileBasicInfo> downloadedInfo= cacheModel.read(readTestPath)
 
         then:
-           Optional.ofNullable(null) == downloadedInfo
+            Optional.ofNullable(null) == downloadedInfo
             cacheModel.getNumberOfFiles()==0
     }
 
@@ -144,7 +145,6 @@ class ArrayListCacheModelSpec extends Specification{
         when:
             cacheModel.movePath(sourceFolder, destinationFolder)
 
-
         then:
             cacheModel.contains(destinationFolder+paths[0]+"file0.txt")
             cacheModel.contains(destinationFolder+paths[1]+"file1.txt")
@@ -185,51 +185,15 @@ class ArrayListCacheModelSpec extends Specification{
             cacheModel.getNumberOfFiles()==0
     }
 
-    void "Should save cache on device"()
-    {
-        given:
-            File cacheModelFile = new File(CACHE_PATH)
-            cacheModel.put(sampleData[0])
-        when:
-            cacheModel.saveData()
-        then:
-            cacheModelFile.exists()
-            cacheModel.getNumberOfFiles()==1
-    }
-
-    void "Should load cache from device"()
-    {
-        given:
-            cacheModel.put(sampleData[0])
-            cacheModel.put(sampleData[1])
-            cacheModel.saveData()
-            ArrayListCacheModel loadedCacheModel = new ArrayListCacheModel(MAX_FILES, CACHE_PATH)
-        when:
-            loadedCacheModel.loadData()
-        then:
-            loadedCacheModel != null
-            loadedCacheModel
-                    .read(sampleData[0]
-                    .filePath)
-                    .get()
-                    .getName() ==
-                    sampleData[0].getName()
-            loadedCacheModel
-                    .read(sampleData[1]
-                    .filePath)
-                    .get()
-                    .getCreationTime() ==
-                    sampleData[1].getCreationTime()
-            loadedCacheModel.getNumberOfFiles()==2
-    }
-
     void "Should remove cache from device"()
     {
         given:
-            cacheModel.saveData()
+            cacheModel.put(sampleData[0])
+
         when:
             cacheModel.removeFromDevice()
             File cacheModelFile = new File(CACHE_PATH)
+
         then:
             !cacheModelFile.exists()
     }
@@ -238,8 +202,10 @@ class ArrayListCacheModelSpec extends Specification{
     {
         given:
             cacheModel.put(sampleData[0])
+
         when:
             double size = cacheModel.getSizeInBytes()
+
         then:
             size>0
     }
