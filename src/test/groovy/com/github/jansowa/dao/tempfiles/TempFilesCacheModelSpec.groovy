@@ -8,7 +8,7 @@ class TempFilesCacheModelSpec extends Specification{
     @Shared TempFilesCacheModel cacheModel
     @Shared private FileBasicInfo[] sampleData
     static final long MAX_FILES = 1000
-    static final String CACHE_PATH = "/TempFilesCacheModelTest/"
+    static final String CACHE_PATH = "TempFilesCacheModelTest"
 
     def setupSpec()
     {
@@ -35,10 +35,13 @@ class TempFilesCacheModelSpec extends Specification{
 
     void "Should upload file"()
     {
+        given:
+            File filePath = new File(CACHE_PATH+sampleData[0].getFilePath())
         when:
             cacheModel.put(sampleData[0])
 
         then:
+            filePath.exists()
             cacheModel.contains(sampleData[0].getFilePath())
             cacheModel.getNumberOfFiles()==1
     }
