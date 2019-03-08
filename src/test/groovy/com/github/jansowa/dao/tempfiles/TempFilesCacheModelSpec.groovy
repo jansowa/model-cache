@@ -212,4 +212,22 @@ class TempFilesCacheModelSpec extends Specification{
         then:
             size>0
     }
+
+    void "Should remove two oldest files"()
+    {
+        given:
+            cacheModel.put(sampleData[0])
+            Thread.sleep(10)
+            cacheModel.put(sampleData[1])
+            Thread.sleep(10)
+            cacheModel.put(sampleData[2])
+        when:
+            cacheModel.removeOldestFile()
+            cacheModel.removeOldestFile()
+        then:
+            !cacheModel.contains(sampleData[0].getFilePath())
+            !cacheModel.contains(sampleData[1].getFilePath())
+            cacheModel.contains(sampleData[2].getFilePath())
+            cacheModel.getNumberOfFiles()==1
+    }
 }

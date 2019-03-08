@@ -5,10 +5,12 @@ import com.github.jansowa.domain.FileBasicInfo;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
+import java.util.LinkedList;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -41,20 +43,6 @@ public class TempFilesCacheModel implements CacheModel {
         if(getNumberOfFiles()>maxNumberOfFiles){
             removeOldestFile();
         }
-    }
-
-    private void removeOldestFile() {
-        File cacheModel = new File(cacheModelPath);
-        File[] allFiles = cacheModel.listFiles();
-        long oldestDate = new Date().getTime();
-        File oldestFile = null;
-        for (File file: allFiles) {
-            if(file.lastModified() < oldestDate){
-                oldestDate = file.lastModified();
-                oldestFile = file;
-            }
-        }
-        remove(oldestFile.getPath());
     }
 
     @Override
@@ -91,18 +79,6 @@ public class TempFilesCacheModel implements CacheModel {
         return countFilesInDirectory(cacheModelDirectory);
     }
 
-    private int countFilesInDirectory(File directory){
-        File[] filesInDirectory = directory.listFiles();
-        int numberOfFiles = 0;
-        for (File fileInDirectory : filesInDirectory)
-            if (fileInDirectory.isDirectory())
-                numberOfFiles += countFilesInDirectory(fileInDirectory);
-            else
-                numberOfFiles++;
-
-        return numberOfFiles;
-    }
-
     @Override
     public void removeAllData() {
         try {
@@ -124,6 +100,35 @@ public class TempFilesCacheModel implements CacheModel {
         } catch (IOException e) {
             log(e);
         }
+    }
+
+    private void removeOldestFile() {
+        File cacheModel = new File(cacheModelPath);
+        LinkedList<File> allFiles = (LinkedList<File>) FileUtils.listFiles(
+                cacheModel, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
+        long oldestDate = new Date().getTime();
+        File oldestFile = null;
+        for (File file: allFiles) {
+            if(file.lastModified() < oldestDate){
+                oldestDate = file.lastModified();
+                oldestFile = file;
+            }
+        }
+        remove(oldestFile
+                .getPath()
+                .substring(cacheModelPath.length()));
+    }
+
+    private int countFilesInDirectory(File directory){
+        File[] filesInDirectory = directory.listFiles();
+        int numberOfFiles = 0;
+        for (File fileInDirectory : filesInDirectory)
+            if (fileInDirectory.isDirectory())
+                numberOfFiles += countFilesInDirectory(fileInDirectory);
+            else
+                numberOfFiles++;
+
+        return numberOfFiles;
     }
 
     private void log(Exception e){
