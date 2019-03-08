@@ -31,10 +31,8 @@ public class TempFilesCacheModel implements CacheModel {
     @Override
     public void put(FileBasicInfo file) {
         File fileToSave = new File(cacheModelPath+file.getFilePath());
-        Date lastUsageTime = new Date();
         String fileData = file.getUrl() + "\n"
-                        + file.getCreationTime().getTime() + "\n"
-                        + lastUsageTime.getTime();
+                        + file.getCreationTime().getTime() + "\n";
         try {
             FileUtils.writeStringToFile(fileToSave, fileData, "UTF-8", false);
         } catch (IOException e) {
