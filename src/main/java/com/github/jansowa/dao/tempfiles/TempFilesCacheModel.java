@@ -5,12 +5,14 @@ import com.github.jansowa.domain.FileBasicInfo;
 import lombok.Getter;
 import lombok.Setter;
 import org.apache.commons.io.FileUtils;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.io.filefilter.TrueFileFilter;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
 import java.util.LinkedList;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
 
@@ -63,12 +65,50 @@ public class TempFilesCacheModel implements CacheModel {
 
     @Override
     public void movePath(String sourcePath, String destinationPath) {
-
+        File source = new File(cacheModelPath+sourcePath);
+        File destination = new File(cacheModelPath+destinationPath);
+        if(!source.exists()){
+            return;
+        }
+        try {
+            if (source.isFile()) {
+                FileUtils.moveFile(source, destination);
+            } else {
+                FileUtils.moveDirectory(source, destination);
+            }
+        } catch (IOException e) {
+            log(e);
+        }
     }
 
     @Override
     public Optional<FileBasicInfo> read(String filePath) {
-        return Optional.empty();
+        File downloadedFile = new File(cacheModelPath+filePath);
+        if(!downloadedFile.exists()) {
+            return Optional.empty();
+        }
+
+        List<String> downloadedStrings = null;
+        try {
+            downloadedStrings = FileUtils.readLines(downloadedFile, "UTF-8");
+        } catch (IOException e) {
+            log(e);
+        }
+
+        FileBasicInfo.FileBasicInfoBuilder downloadedInfoBuilder = FileBasicInfo.builder();
+        downloadedInfoBuilder.filePath(filePath);
+        downloadedInfoBuilder.name(FilenameUtils.getBaseName(filePath));
+        downloadedInfoBuilder.extension(FilenameUtils.getExtension(filePath));
+        downloadedInfoBuilder.url(downloadedStrings.get(0));
+
+        Date creationTime = new Date(Long.parseLong(
+                downloadedStrings.get(1)));
+        downloadedInfoBuilder.creationTime(creationTime);
+
+        Date lastUsageTime = new Date(downloadedFile.lastModified());
+        downloadedInfoBuilder.lastUsageTime(lastUsageTime);
+
+        return Optional.of(downloadedInfoBuilder.build());
     }
 
     @Override
