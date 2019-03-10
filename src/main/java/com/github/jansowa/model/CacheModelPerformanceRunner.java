@@ -53,11 +53,7 @@ public class CacheModelPerformanceRunner {
         List<TimeResults> allTimeResults = runner.runTestForAllCache(cacheModels, numberOfTests);
         runner.printResults(allTimeResults, cacheModelsNames, numberOfTests);
 
-        arrayListCache.removeFromDevice();
-        hashMapCache.removeFromDevice();
-        sqliteCacheModel1.removeFromDevice();
-        sqliteCacheModel2.removeFromDevice();
-        tempFilesCacheModel.removeFromDevice();
+        runner.removeAllCachesFromDevice(cacheModels);
     }
 
     private List<TimeResults> runTestForAllCache(List<CacheModel> allCacheModels, int numberOfTests){
@@ -100,6 +96,12 @@ public class CacheModelPerformanceRunner {
                             timeResults.get(i).readTestTime) + "ms");
             System.out.println("Size of "+numberOfTests+" files in bytes: "+timeResults.get(i).sizeOfFiles);
             System.out.println();
+        }
+    }
+
+    private void removeAllCachesFromDevice(List<CacheModel> allCacheModels){
+        for (CacheModel cacheModel: allCacheModels) {
+            cacheModel.removeFromDevice();
         }
     }
 
