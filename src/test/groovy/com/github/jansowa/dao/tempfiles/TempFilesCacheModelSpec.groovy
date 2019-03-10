@@ -8,7 +8,7 @@ class TempFilesCacheModelSpec extends Specification{
     @Shared TempFilesCacheModel cacheModel
     @Shared private FileBasicInfo[] sampleData
     static final long MAX_FILES = 1000
-    static final String CACHE_PATH = "TempFilesCacheModelTest"
+    static final String CACHE_PATH = "TempFilesCacheModelTest/"
 
     def setupSpec()
     {

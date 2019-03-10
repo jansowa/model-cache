@@ -5,6 +5,7 @@ import com.github.jansowa.dao.datastructure.ArrayListCacheModel;
 import com.github.jansowa.dao.datastructure.HashMapCacheModel;
 import com.github.jansowa.dao.relationaldb.SQLiteCacheModel1;
 import com.github.jansowa.dao.relationaldb.SQLiteCacheModel2;
+import com.github.jansowa.dao.tempfiles.TempFilesCacheModel;
 import com.github.jansowa.domain.FileBasicInfo;
 
 import java.util.ArrayList;
@@ -44,6 +45,10 @@ public class CacheModelPerformanceRunner {
         SQLiteCacheModel2 sqliteCacheModel2 = new SQLiteCacheModel2(1000, "sqlite2.db");
         cacheModels.add(sqliteCacheModel2);
 
+        cacheModelsNames.add("Temp files cache");
+        TempFilesCacheModel tempFilesCacheModel = new TempFilesCacheModel(1000, "tempFiles/");
+        cacheModels.add(tempFilesCacheModel);
+
         int numberOfTests = 100;
         List<TimeResults> allTimeResults = runner.runTestForAllCache(cacheModels, numberOfTests);
         runner.printResults(allTimeResults, cacheModelsNames, numberOfTests);
@@ -52,6 +57,7 @@ public class CacheModelPerformanceRunner {
         hashMapCache.removeFromDevice();
         sqliteCacheModel1.removeFromDevice();
         sqliteCacheModel2.removeFromDevice();
+        tempFilesCacheModel.removeFromDevice();
     }
 
     private List<TimeResults> runTestForAllCache(List<CacheModel> allCacheModels, int numberOfTests){
