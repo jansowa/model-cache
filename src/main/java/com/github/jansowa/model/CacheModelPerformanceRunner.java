@@ -3,6 +3,7 @@ package com.github.jansowa.model;
 import com.github.jansowa.dao.CacheModel;
 import com.github.jansowa.dao.datastructure.ArrayListCacheModel;
 import com.github.jansowa.dao.datastructure.HashMapCacheModel;
+import com.github.jansowa.dao.nonrelationaldb.NitriteCacheModel1;
 import com.github.jansowa.dao.relationaldb.SQLiteCacheModel1;
 import com.github.jansowa.dao.relationaldb.SQLiteCacheModel2;
 import com.github.jansowa.dao.tempfiles.TempFilesCacheModel;
@@ -48,6 +49,10 @@ public class CacheModelPerformanceRunner {
         cacheModelsNames.add("Temp files cache");
         TempFilesCacheModel tempFilesCacheModel = new TempFilesCacheModel(1000, "tempFiles/");
         cacheModels.add(tempFilesCacheModel);
+
+        cacheModelsNames.add("Nitrite - one collection for all files");
+        NitriteCacheModel1 nitriteCacheModel1 = new NitriteCacheModel1(1000, "nitrite1.db");
+        cacheModels.add(nitriteCacheModel1);
 
         int numberOfTests = 100;
         List<TimeResults> allTimeResults = runner.runTestForAllCache(cacheModels, numberOfTests);
