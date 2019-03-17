@@ -128,11 +128,11 @@ abstract class CacheModelSpec extends Specification{
             cacheModel.movePath(sourceFolder, destinationFolder)
 
         then:
-            cacheModel.contains(destinationFolder+paths[0])
-            cacheModel.contains(destinationFolder+paths[1])
-            cacheModel.contains(destinationFolder+paths[2])
-            cacheModel.contains(destinationFolder+paths[3])
-            cacheModel.contains(destinationFolder+paths[4])
+            cacheModel.contains(destinationFolder+paths[0]+"file0.txt")
+            cacheModel.contains(destinationFolder+paths[1]+"file1.txt")
+            cacheModel.contains(destinationFolder+paths[2]+"file2.txt")
+            cacheModel.contains(destinationFolder+paths[3]+"file3.txt")
+            cacheModel.contains(destinationFolder+paths[4]+"file4.txt")
     }
 
     void "Should get number of stored files"()
