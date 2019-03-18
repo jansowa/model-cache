@@ -17,6 +17,7 @@ import java.sql.Statement;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 //All data in one table
@@ -25,10 +26,14 @@ public class SQLiteCacheModel1 implements CacheModel {
     private String cacheModelPath; //TODO fix - cacheModelPath now can't include slash
     private Connection connection;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+    private final Properties pooledStatements;
 
     public SQLiteCacheModel1(long maxNumberOfFiles, String cacheModelPath){
         this.maxNumberOfFiles = maxNumberOfFiles;
         this.cacheModelPath = cacheModelPath;
+        pooledStatements = new Properties();
+        pooledStatements
+                .setProperty("MaxPooledStatements", "10");
         getConnection();
     }
 
@@ -58,7 +63,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(putStatement);
-            SQLiteHelper.close(connection);
         }
 
     }
@@ -78,7 +82,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(removeStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -97,7 +100,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally{
             SQLiteHelper.close(removeStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -117,7 +119,6 @@ public class SQLiteCacheModel1 implements CacheModel {
         } finally {
             SQLiteHelper.close(containsStatement);
             SQLiteHelper.close(filesWithGivenPath);
-            SQLiteHelper.close(connection);
         }
         return isFileInDB;
     }
@@ -137,7 +138,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(moveStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -178,7 +178,6 @@ public class SQLiteCacheModel1 implements CacheModel {
         } finally{
             SQLiteHelper.close(readStatement);
             SQLiteHelper.close(readedData);
-            SQLiteHelper.close(connection);
         }
         return Optional.empty();
     }
@@ -216,7 +215,6 @@ public class SQLiteCacheModel1 implements CacheModel {
         } finally {
             SQLiteHelper.close(countStatement);
             SQLiteHelper.close(countResult);
-            SQLiteHelper.close(connection);
         }
 
         return numberOfFiles;
@@ -234,7 +232,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally{
             SQLiteHelper.close(removeAllStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -252,14 +249,23 @@ public class SQLiteCacheModel1 implements CacheModel {
         }
     }
 
+    public void closeConnection(){
+        SQLiteHelper.close(connection);
+    }
+
     private void getConnection(){
+        Statement pragmaStatement = null;
         try{
             if(connection == null || connection.isClosed()) {
                 Class.forName("org.sqlite.JDBC");
-                connection = DriverManager.getConnection("jdbc:sqlite:" + cacheModelPath);
+                connection = DriverManager.getConnection("jdbc:sqlite:" + cacheModelPath, pooledStatements);
+                pragmaStatement = connection.createStatement();
+                pragmaStatement.execute("PRAGMA synchronous = OFF");
             }
         } catch (ClassNotFoundException | SQLException e) {
             log(e);
+        } finally {
+            SQLiteHelper.close(pragmaStatement);
         }
         initialise();
     }

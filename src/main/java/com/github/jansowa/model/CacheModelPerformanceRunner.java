@@ -58,6 +58,8 @@ public class CacheModelPerformanceRunner {
         List<TimeResults> allTimeResults = runner.runTestForAllCache(cacheModels, numberOfTests);
         runner.printResults(allTimeResults, cacheModelsNames, numberOfTests);
 
+        sqliteCacheModel1.closeConnection();
+        sqliteCacheModel2.closeConnection();
         runner.removeAllCachesFromDevice(cacheModels);
     }
 

@@ -27,6 +27,7 @@ class SQLiteCacheModel1Spec extends Specification{
 
     def cleanup()
     {
+        cacheModel.closeConnection()
         cacheModel.removeFromDevice()
     }
 
@@ -207,7 +208,9 @@ class SQLiteCacheModel1Spec extends Specification{
     void "Should remove oldest file"(){
         given:
             cacheModel.put(sampleData[0])
+            Thread.sleep(100)
             cacheModel.put(sampleData[1])
+            Thread.sleep(100)
             cacheModel.put(sampleData[2])
 
         when:
