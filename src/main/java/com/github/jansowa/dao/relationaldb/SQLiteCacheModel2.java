@@ -10,6 +10,7 @@ import java.sql.*;
 import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
+import java.util.Properties;
 import java.util.logging.Logger;
 
 //one table for each folder
@@ -18,10 +19,14 @@ public class SQLiteCacheModel2 implements CacheModel {
     private String cacheModelPath; //TODO fix - now cacheModelPath can't include slash
     private Connection connection;
     private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
+    private final Properties pooledStatements;
 
     public SQLiteCacheModel2(long maxNumberOfFiles, String cacheModelPath){
         this.maxNumberOfFiles = maxNumberOfFiles;
         this.cacheModelPath = cacheModelPath;
+        pooledStatements = new Properties();
+        pooledStatements
+                .setProperty("MaxPooledStatements", "10");
         getConnection();
     }
 
@@ -311,13 +316,18 @@ public class SQLiteCacheModel2 implements CacheModel {
     }
 
     private void getConnection(){
+        Statement pragmaStatement = null;
         try{
             if(connection == null || connection.isClosed()) {
                 Class.forName("org.sqlite.JDBC");
-                connection = DriverManager.getConnection("jdbc:sqlite:" + cacheModelPath);
+                connection = DriverManager.getConnection("jdbc:sqlite:" + cacheModelPath, pooledStatements);
+                pragmaStatement = connection.createStatement();
+                pragmaStatement.execute("PRAGMA synchronous = OFF");
             }
         } catch (ClassNotFoundException | SQLException e) {
             log(e);
+        } finally {
+            SQLiteHelper.close(pragmaStatement);
         }
     }
 
