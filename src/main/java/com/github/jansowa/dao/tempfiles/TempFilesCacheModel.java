@@ -95,20 +95,21 @@ public class TempFilesCacheModel implements CacheModel {
             log(e);
         }
 
-        FileBasicInfo.FileBasicInfoBuilder downloadedInfoBuilder = FileBasicInfo.builder();
-        downloadedInfoBuilder.filePath(filePath);
-        downloadedInfoBuilder.name(FilenameUtils.getBaseName(filePath));
-        downloadedInfoBuilder.extension(FilenameUtils.getExtension(filePath));
-        downloadedInfoBuilder.url(downloadedStrings.get(0));
-
         Date creationTime = new Date(Long.parseLong(
                 downloadedStrings.get(1)));
-        downloadedInfoBuilder.creationTime(creationTime);
-
         Date lastUsageTime = new Date(downloadedFile.lastModified());
-        downloadedInfoBuilder.lastUsageTime(lastUsageTime);
 
-        return Optional.of(downloadedInfoBuilder.build());
+        FileBasicInfo downloadedFileInfo = FileBasicInfo
+                .builder()
+                .name(FilenameUtils.getBaseName(filePath))
+                .filePath(filePath)
+                .extension(FilenameUtils.getExtension(filePath))
+                .url(downloadedStrings.get(0))
+                .creationTime(creationTime)
+                .lastUsageTime(lastUsageTime)
+                .build();
+
+        return Optional.ofNullable(downloadedFileInfo);
     }
 
     @Override
@@ -142,16 +143,12 @@ public class TempFilesCacheModel implements CacheModel {
 
     private void removeOldestFile() {
         File cacheModel = new File(cacheModelPath);
-        LinkedList<File> allFiles = (LinkedList<File>) FileUtils.listFiles(
-                cacheModel, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE);
-        long oldestDate = new Date().getTime();
-        File oldestFile = null;
-        for (File file: allFiles) {
-            if(file.lastModified() < oldestDate){
-                oldestDate = file.lastModified();
-                oldestFile = file;
-            }
-        }
+        File oldestFile = FileUtils
+                .listFiles(cacheModel, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
+                .stream()
+                .sorted((file1, file2) -> (int) (file1.lastModified() - file2.lastModified()))
+                .findFirst()
+                .get();
         remove(oldestFile
                 .getPath()
                 .substring(cacheModelPath.length()));
@@ -159,12 +156,17 @@ public class TempFilesCacheModel implements CacheModel {
 
     private int countFilesInDirectory(File directory){
         File[] filesInDirectory = directory.listFiles();
+        if(filesInDirectory==null){
+            return 0;
+        }
         int numberOfFiles = 0;
-        for (File fileInDirectory : filesInDirectory)
-            if (fileInDirectory.isDirectory())
+        for (File fileInDirectory : filesInDirectory) {
+            if (fileInDirectory.isDirectory()) {
                 numberOfFiles += countFilesInDirectory(fileInDirectory);
-            else
+            } else {
                 numberOfFiles++;
+            }
+        }
 
         return numberOfFiles;
     }

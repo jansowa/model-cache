@@ -7,7 +7,6 @@ import lombok.Setter;
 
 import java.io.File;
 import java.sql.*;
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Properties;
@@ -18,7 +17,6 @@ public class SQLiteCacheModel2 implements CacheModel {
     @Getter @Setter private long maxNumberOfFiles;
     private String cacheModelPath; //TODO fix - now cacheModelPath can't include slash
     private Connection connection;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
     private final Properties pooledStatements;
 
     public SQLiteCacheModel2(long maxNumberOfFiles, String cacheModelPath){
@@ -32,11 +30,10 @@ public class SQLiteCacheModel2 implements CacheModel {
 
     @Override
     public void put(FileBasicInfo file) {
-        String folderPath = getFolderFromPath(file.getFilePath());
-        createTableForFolder(folderPath);
-
         getConnection();
         PreparedStatement putStatement = null;
+        String folderPath = getFolderFromPath(file.getFilePath());
+        createTableForFolder(folderPath);
         Date lastUsageTime = new Date();
 
         try{
@@ -67,6 +64,7 @@ public class SQLiteCacheModel2 implements CacheModel {
         getConnection();
         PreparedStatement removeStatement = null;
         String folderPath = getFolderFromPath(filePath);
+
         try{
             removeStatement = connection.prepareStatement(
                     "DELETE FROM `"+ folderPath +"` "+
@@ -87,13 +85,13 @@ public class SQLiteCacheModel2 implements CacheModel {
 
     @Override
     public boolean contains(String filePath) {
+        getConnection();
         PreparedStatement containsStatement = null;
         ResultSet filesWithGivenPath = null;
         boolean isFileInDB = false;
         String folderPath = getFolderFromPath(filePath);
         String name = getNameFromPath(filePath);
         String extension = getExtensionFromPath(filePath);
-        getConnection();
 
         try{
             containsStatement = connection.prepareStatement(
@@ -125,6 +123,10 @@ public class SQLiteCacheModel2 implements CacheModel {
     }
 
     private void moveSingleFile(String sourcePath, String destinationPath) { //TODO - doesn't work for files without extension
+        getConnection();
+        PreparedStatement selectFileStatement = null;
+        ResultSet fileToMove = null;
+
         String sourceFolder = getFolderFromPath(sourcePath);
         String sourceName = getNameFromPath(sourcePath);
         String sourceExtension = getExtensionFromPath(sourcePath);
@@ -133,9 +135,7 @@ public class SQLiteCacheModel2 implements CacheModel {
         String destinationName = getNameFromPath(destinationPath);
         String destinationExtension = getExtensionFromPath(destinationPath);
 
-        getConnection();
-        PreparedStatement selectFileStatement = null;
-        ResultSet fileToMove = null;
+
         try{
             selectFileStatement = connection.prepareStatement(
                     "SELECT creationTime, url FROM `" + sourceFolder + "`" +
@@ -168,9 +168,9 @@ public class SQLiteCacheModel2 implements CacheModel {
     }
 
     private void moveWholeFolder(String sourceFolder, String destinationFolder){
+        getConnection();
         Statement moveStatement = null;
         ResultSet tablesToMove = null;
-        getConnection();
 
         try{
             moveStatement = connection.createStatement();
@@ -254,6 +254,7 @@ public class SQLiteCacheModel2 implements CacheModel {
         ResultSet tablesNames = null;
         Statement selectTablesNamesStatement = null;
         int numberOfFiles = 0;
+
         try{
             selectTablesNamesStatement = connection.createStatement();
             tablesNames = selectTablesNamesStatement.executeQuery(
@@ -275,10 +276,11 @@ public class SQLiteCacheModel2 implements CacheModel {
     }
 
     private int getNumberOfRows(String tableName){
-        int numberOfFiles=-1;
         getConnection();
         Statement countStatement = null;
         ResultSet countResult = null;
+        int numberOfFiles=-1;
+
         try {
             countStatement = connection.createStatement();
             countResult = countStatement.executeQuery("SELECT count(*) FROM `" + tableName + "`");
@@ -379,8 +381,8 @@ public class SQLiteCacheModel2 implements CacheModel {
         if(getNumberOfRows(folderPath)>0){
             return;
         }
-        Statement removeTableStatement = null;
         getConnection();
+        Statement removeTableStatement = null;
 
         try{
             removeTableStatement = connection.createStatement();
@@ -398,6 +400,7 @@ public class SQLiteCacheModel2 implements CacheModel {
         getConnection();
         ResultSet tablesNames = null;
         Statement removeOldestFileStatement = null;
+
         try{
             removeOldestFileStatement = connection.createStatement();
             tablesNames = removeOldestFileStatement.executeQuery(

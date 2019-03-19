@@ -2,15 +2,24 @@ package com.github.jansowa.dao.datastructure;
 
 import com.github.jansowa.dao.CacheModel;
 import com.github.jansowa.domain.FileBasicInfo;
+
 import lombok.Getter;
 
-import java.io.*;
+import java.io.File;
+import java.io.ObjectOutputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.FileInputStream;
+import java.io.Serializable;
+import java.io.IOException;
 
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.List;
 import java.util.Optional;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class ArrayListCacheModel implements CacheModel, Serializable {
     @Getter private long maxNumberOfFiles;
@@ -41,50 +50,49 @@ public class ArrayListCacheModel implements CacheModel, Serializable {
 
     @Override
     public void remove(String filePath) {
-        int numberOfFiles = getNumberOfFiles();
-        for (int i = 0; i < numberOfFiles; i++) {
-            if(storedFiles.get(i).getFilePath().equals(filePath)){
-                storedFiles.remove(i);
-                saveData();
-                break;
-            }
-        }
+        getByPath(filePath)
+                .ifPresent(storedFiles::remove);
     }
 
     @Override
     public boolean contains(String filePath) {
-        for (FileBasicInfo file: storedFiles) {
-            if(file.getFilePath().equals(filePath)){
-                return true;
-            }
-        }
-        return false;
+        return storedFiles
+                .stream()
+                .anyMatch(file -> filePath.equals(file.getFilePath()));
     }
 
     @Override
     public void movePath(String sourcePath, String destinationPath) {
-        int index = findIndexByPath(sourcePath);
-        if (index>0) {
-            moveSingleFile(destinationPath, index);
-        }
-        else {
-            moveWholeFolder(sourcePath, destinationPath);
-        }
+        List<FileBasicInfo> filesToMove = storedFiles
+                .stream()
+                .filter(file -> file
+                        .getFilePath()
+                        .startsWith(sourcePath))
+                .collect(Collectors.toList());
+        storedFiles.removeAll(filesToMove);
+        filesToMove = filesToMove
+                .stream()
+                .map(file -> {
+                    String currentPath = file.getFilePath();
+                    String finalPath = destinationPath +
+                            currentPath.substring(sourcePath.length());
+                    return file.withLastUsageTime(new Date())
+                            .withFilePath(finalPath);
+                }).collect(Collectors.toList());
+        storedFiles.addAll(filesToMove);
         saveData();
     }
 
     @Override
     public Optional<FileBasicInfo> read(String filePath) {
-        int index = findIndexByPath(filePath);
-        if(index==-1)
-            return Optional.empty();
-        FileBasicInfo downloadedFile = storedFiles
-                                        .get(index)
-                                        .withLastUsageTime(new Date());
-        storedFiles.add(downloadedFile);
-        storedFiles.remove(index);
-        saveData();
-        return Optional.of(downloadedFile);
+        Optional<FileBasicInfo> downloadedFileOpt = getByPath(filePath);
+        if(downloadedFileOpt.isPresent()){
+            FileBasicInfo downloadedFile = downloadedFileOpt.get();
+            storedFiles.remove(downloadedFile);
+            downloadedFile = downloadedFile.withLastUsageTime(new Date());
+            storedFiles.add(downloadedFile);
+        }
+        return downloadedFileOpt;
     }
 
     @Override
@@ -117,7 +125,7 @@ public class ArrayListCacheModel implements CacheModel, Serializable {
         }
     }
 
-    protected void loadData(){
+    public void loadData(){
         try(ObjectInputStream objectInputStream =
                     new ObjectInputStream(
                             new FileInputStream(cacheModelPath))){
@@ -133,49 +141,15 @@ public class ArrayListCacheModel implements CacheModel, Serializable {
         this.maxNumberOfFiles = maxNumberOfFiles;
         saveData();
     }
+
     public void setCacheModelPath(String cacheModelPath){
         this.cacheModelPath = cacheModelPath;
         saveData();
     }
 
-    private int findIndexByPath(String filePath){
-        int numberOfFiles = getNumberOfFiles();
-
-        for (int i = numberOfFiles-1; i >= 0; i--)
-            if(storedFiles
-                    .get(i)
-                    .getFilePath()
-                    .equals(filePath))
-                return i;
-
-        return -1;
-    }
-
-    private void moveSingleFile(String destinationPath, int index) {
-        FileBasicInfo fileToMove = storedFiles
-                .get(index)
-                .withFilePath(destinationPath)
-                .withLastUsageTime(new Date());
-        storedFiles.add(fileToMove);
-        storedFiles.remove(index);
-    }
-
-    private void moveWholeFolder(String sourcePath, String destinationPath){
-        int sourcePathLength = sourcePath.length();
-        int numberOfFiles = getNumberOfFiles();
-        for(int i=0; i<numberOfFiles; i++){
-            String singleFilePath = storedFiles
-                    .get(i)
-                    .getFilePath();
-            if(singleFilePath.length()>=sourcePathLength && singleFilePath
-                    .substring(0, sourcePathLength)
-                    .equals(sourcePath)){
-                moveSingleFile(destinationPath+
-                        singleFilePath
-                        .substring(sourcePathLength), i);
-                i--;
-                numberOfFiles--;
-            }
-        }
+    private Optional<FileBasicInfo> getByPath(String filePath) {
+        return storedFiles.stream()
+                .filter(file -> filePath.equals(file.getFilePath()))
+                .findFirst();
     }
 }

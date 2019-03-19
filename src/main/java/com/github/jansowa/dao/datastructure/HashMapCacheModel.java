@@ -2,15 +2,23 @@ package com.github.jansowa.dao.datastructure;
 
 import com.github.jansowa.dao.CacheModel;
 import com.github.jansowa.domain.FileBasicInfo;
-import lombok.Getter;
-import lombok.Setter;
 
-import java.io.*;
+import lombok.Getter;
+
+import java.io.File;
+import java.io.ObjectOutputStream;
+import java.io.FileOutputStream;
+import java.io.ObjectInputStream;
+import java.io.FileInputStream;
+import java.io.Serializable;
+import java.io.IOException;
+
 import java.util.*;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 
 public class HashMapCacheModel implements CacheModel, Serializable{
-    @Getter @Setter private long maxNumberOfFiles;
+    @Getter private long maxNumberOfFiles;
     private String cacheModelPath;
     private HashMap<String, FileBasicInfo> storedFiles;
 
@@ -42,39 +50,32 @@ public class HashMapCacheModel implements CacheModel, Serializable{
 
     @Override
     public void movePath(String sourcePath, String destinationPath) {
-        if(storedFiles.containsKey(sourcePath)) {
-            moveSingleFile(sourcePath, destinationPath);
-        }
-        else{
-            moveWholeFolder(sourcePath, destinationPath);
-        }
+        ArrayList<String> pathsToRemove = new ArrayList<>();
+        HashMap<String, FileBasicInfo> entriesToAdd = new HashMap<>();
+        storedFiles
+                .keySet()
+                .stream()
+                .filter(path -> path.startsWith(sourcePath))
+                .forEach(path -> {
+                    pathsToRemove.add(path);
+                    String finalPath = destinationPath +
+                            path.substring(sourcePath.length());
+                    FileBasicInfo fileToAdd = storedFiles
+                                    .get(path)
+                                    .withLastUsageTime(new Date())
+                                    .withFilePath(finalPath);
+                    entriesToAdd.put(finalPath, fileToAdd);
+                });
+        storedFiles.putAll(entriesToAdd);
+        storedFiles.keySet().removeAll(pathsToRemove);
         saveData();
-    }
-
-    private void moveSingleFile(String sourcePath, String destinationPath) {
-        FileBasicInfo fileToMove = storedFiles.remove(sourcePath);
-        fileToMove = fileToMove.withLastUsageTime(new Date()).withFilePath(destinationPath);
-        storedFiles.put(destinationPath, fileToMove);
-    }
-
-    private void moveWholeFolder(String sourcePath, String destinationPath) {
-        int sourcePathLength = sourcePath.length();
-        ArrayList<String> pathsToMove = new ArrayList<>();
-        for (String key:storedFiles.keySet()) {
-            if(key.substring(0, sourcePathLength).equals(sourcePath)){
-                pathsToMove.add(key);
-            }
-        }
-        for (String path: pathsToMove) {
-            moveSingleFile(path, destinationPath+path.substring(sourcePathLength));
-        }
-
     }
 
     @Override
     public Optional<FileBasicInfo> read(String filePath) {
-        if (!storedFiles.containsKey(filePath))
+        if (!storedFiles.containsKey(filePath)) {
             return Optional.ofNullable(null);
+        }
         FileBasicInfo downloadedFile = storedFiles.get(filePath);
         downloadedFile.withLastUsageTime(new Date());
         storedFiles.remove(filePath);
@@ -96,6 +97,12 @@ public class HashMapCacheModel implements CacheModel, Serializable{
     public long getSizeInBytes(){
         File cacheModel = new File(cacheModelPath);
         return cacheModel.length();
+    }
+
+    @Override
+    public void setMaxNumberOfFiles(long maxNumberOfFiles){
+        this.maxNumberOfFiles = maxNumberOfFiles;
+        saveData();
     }
 
     public void removeFromDevice(){
@@ -129,14 +136,12 @@ public class HashMapCacheModel implements CacheModel, Serializable{
     }
 
     private String findOldestFile(){
-        Date oldestDate = new Date(2200, 1, 1);
-        String pathOfOldestFile = null;
-        for (FileBasicInfo file: storedFiles.values()) {
-            if(file.getLastUsageTime().getTime()<oldestDate.getTime()){
-                oldestDate = file.getLastUsageTime();
-                pathOfOldestFile = file.getFilePath();
-            }
-        }
-        return pathOfOldestFile;
+        return storedFiles
+                .values()
+                .stream()
+                .sorted((file1, file2) -> file1.getLastUsageTime().compareTo(file2.getLastUsageTime()))
+                .findFirst()
+                .get()
+                .getFilePath();
     }
 }

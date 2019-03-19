@@ -14,7 +14,6 @@ import java.sql.SQLException;
 import java.sql.DriverManager;
 import java.sql.Statement;
 
-import java.text.SimpleDateFormat;
 import java.util.Date;
 import java.util.Optional;
 import java.util.Properties;
@@ -25,7 +24,6 @@ public class SQLiteCacheModel1 implements CacheModel {
     @Getter @Setter private long maxNumberOfFiles;
     private String cacheModelPath; //TODO fix - cacheModelPath now can't include slash
     private Connection connection;
-    private final SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S");
     private final Properties pooledStatements;
 
     public SQLiteCacheModel1(long maxNumberOfFiles, String cacheModelPath){
@@ -42,6 +40,7 @@ public class SQLiteCacheModel1 implements CacheModel {
         getConnection();
         PreparedStatement putStatement = null;
         Date lastUsageTime = new Date();
+
         try {
             putStatement = connection
                     .prepareStatement(
@@ -55,7 +54,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             putStatement.setLong(7, lastUsageTime.getTime());
 
             putStatement.execute();
-
             if(getNumberOfFiles() > getMaxNumberOfFiles()){
                 removeOldestFile();
             }
@@ -71,6 +69,7 @@ public class SQLiteCacheModel1 implements CacheModel {
     protected void removeOldestFile() {
         getConnection();
         Statement removeStatement = null;
+
         try {
             removeStatement = connection.createStatement();
             removeStatement.execute(
@@ -91,6 +90,7 @@ public class SQLiteCacheModel1 implements CacheModel {
     public void remove(String filePath) {
         getConnection();
         PreparedStatement removeStatement = null;
+
         try{
             removeStatement = connection
                     .prepareStatement(
@@ -108,10 +108,11 @@ public class SQLiteCacheModel1 implements CacheModel {
 
     @Override
     public boolean contains(String filePath) {
+        getConnection();
         PreparedStatement containsStatement = null;
         ResultSet filesWithGivenPath = null;
-        getConnection();
         boolean isFileInDB = false;
+
         try {
             containsStatement = connection.prepareStatement("SELECT id FROM files WHERE filePath=?");
             containsStatement.setString(1, filePath);
@@ -131,13 +132,13 @@ public class SQLiteCacheModel1 implements CacheModel {
     public void movePath(String sourcePath, String destinationPath) {
         getConnection();
         Statement moveStatement = null;
+
         try{
             int sourcePathLength = sourcePath.length();
             moveStatement = connection.createStatement();
             moveStatement.execute("UPDATE files "+
                     "SET filePath = '" +destinationPath+"' || substr(filePath, "+(sourcePathLength+1)+") "+
                     " WHERE substr(filePath, 1, " + sourcePathLength +") = '"+sourcePath+"'");
-
         } catch (SQLException e) {
             log(e);
         } finally {
@@ -149,9 +150,10 @@ public class SQLiteCacheModel1 implements CacheModel {
 
     @Override
     public Optional<FileBasicInfo> read(String filePath) {
-        ResultSet readedData = null;
         getConnection();
+        ResultSet readedData = null;
         PreparedStatement readStatement = null;
+
         try {
             readStatement = connection
                     .prepareStatement(
@@ -188,29 +190,13 @@ public class SQLiteCacheModel1 implements CacheModel {
         return Optional.empty();
     }
 
-    private void updateLastUsageTime(String filePath, Date readDate) {
-        PreparedStatement updateTimeStatement = null;
-        try {
-            updateTimeStatement = connection.prepareStatement(
-                    "UPDATE files "+
-                            "SET lastUsageTime = ? "+
-                            "WHERE filePath = ?");
-            updateTimeStatement.setString(1, dateFormat.format(readDate));
-            updateTimeStatement.setString(2, filePath);
-            updateTimeStatement.execute();
-        } catch (SQLException e) {
-            log(e);
-        } finally {
-            SQLiteHelper.close(updateTimeStatement);
-        }
-    }
-
     @Override
     public int getNumberOfFiles() {
-        int numberOfFiles=-1;
         getConnection();
         Statement countStatement = null;
         ResultSet countResult = null;
+        int numberOfFiles=-1;
+
         try {
             countStatement = connection.createStatement();
             countResult = countStatement.executeQuery("SELECT count(*) FROM files");
@@ -231,6 +217,7 @@ public class SQLiteCacheModel1 implements CacheModel {
     public void removeAllData() {
         getConnection();
         Statement removeAllStatement = null;
+
         try {
             removeAllStatement = connection.createStatement();
             removeAllStatement.execute("DROP TABLE files");
@@ -259,6 +246,7 @@ public class SQLiteCacheModel1 implements CacheModel {
 
     private void getConnection(){
         Statement pragmaStatement = null;
+
         try{
             if(connection == null || connection.isClosed()) {
                 Class.forName("org.sqlite.JDBC");
@@ -276,6 +264,7 @@ public class SQLiteCacheModel1 implements CacheModel {
 
     private void initialise(){
         Statement createTableStatement = null;
+
         try {
             createTableStatement = connection.createStatement();
             createTableStatement.executeUpdate("CREATE TABLE IF NOT EXISTS files(id INTEGER PRIMARY KEY,"+
@@ -289,6 +278,23 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(createTableStatement);
+        }
+    }
+
+    private void updateLastUsageTime(String filePath, Date readDate) {
+        PreparedStatement updateTimeStatement = null;
+        try {
+            updateTimeStatement = connection.prepareStatement(
+                    "UPDATE files "+
+                            "SET lastUsageTime = ? "+
+                            "WHERE filePath = ?");
+            updateTimeStatement.setLong(1, readDate.getTime());
+            updateTimeStatement.setString(2, filePath);
+            updateTimeStatement.execute();
+        } catch (SQLException e) {
+            log(e);
+        } finally {
+            SQLiteHelper.close(updateTimeStatement);
         }
     }
 
