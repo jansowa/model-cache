@@ -25,7 +25,7 @@ class NitriteCacheModel1Spec extends Specification{
         cacheModel.removeAllData()
     }
 
-    def cleanup()
+    def cleanupSpec()
     {
         cacheModel.removeFromDevice()
     }
