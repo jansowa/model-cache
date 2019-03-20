@@ -63,7 +63,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(putStatement);
-            SQLiteHelper.close(connection);
         }
 
     }
@@ -83,7 +82,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(removeStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -102,7 +100,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally{
             SQLiteHelper.close(removeStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -122,7 +119,6 @@ public class SQLiteCacheModel1 implements CacheModel {
         } finally {
             SQLiteHelper.close(containsStatement);
             SQLiteHelper.close(filesWithGivenPath);
-            SQLiteHelper.close(connection);
         }
         return isFileInDB;
     }
@@ -142,7 +138,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(moveStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -183,7 +178,6 @@ public class SQLiteCacheModel1 implements CacheModel {
         } finally{
             SQLiteHelper.close(readStatement);
             SQLiteHelper.close(readedData);
-            SQLiteHelper.close(connection);
         }
         return Optional.empty();
     }
@@ -221,7 +215,6 @@ public class SQLiteCacheModel1 implements CacheModel {
         } finally {
             SQLiteHelper.close(countStatement);
             SQLiteHelper.close(countResult);
-            SQLiteHelper.close(connection);
         }
 
         return numberOfFiles;
@@ -239,7 +232,6 @@ public class SQLiteCacheModel1 implements CacheModel {
             log(e);
         } finally{
             SQLiteHelper.close(removeAllStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -255,6 +247,10 @@ public class SQLiteCacheModel1 implements CacheModel {
         if(!cacheModel.delete()){
             System.out.println("File "+cacheModelPath+" doesn't exist!");
         }
+    }
+
+    public void closeConnection(){
+        SQLiteHelper.close(connection);
     }
 
     private void getConnection(){

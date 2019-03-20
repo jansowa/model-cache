@@ -30,6 +30,7 @@ class SQLiteCacheModel2Spec extends Specification{
 
     def cleanup()
     {
+        cacheModel.closeConnection()
         cacheModel.removeFromDevice()
     }
 

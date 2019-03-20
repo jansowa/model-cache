@@ -58,7 +58,6 @@ public class SQLiteCacheModel2 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(putStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -81,7 +80,6 @@ public class SQLiteCacheModel2 implements CacheModel {
             log(e);
         } finally {
             SQLiteHelper.close(removeStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -109,7 +107,6 @@ public class SQLiteCacheModel2 implements CacheModel {
         } finally{
             SQLiteHelper.close(containsStatement);
             SQLiteHelper.close(filesWithGivenPath);
-            SQLiteHelper.close(connection);
         }
         return isFileInDB;
     }
@@ -122,6 +119,10 @@ public class SQLiteCacheModel2 implements CacheModel {
         else{
             moveWholeFolder(sourcePath, destinationPath);
         }
+    }
+
+    public void closeConnection(){
+        SQLiteHelper.close(connection);
     }
 
     private void moveSingleFile(String sourcePath, String destinationPath) { //TODO - doesn't work for files without extension
@@ -163,7 +164,6 @@ public class SQLiteCacheModel2 implements CacheModel {
         } finally {
             SQLiteHelper.close(fileToMove);
             SQLiteHelper.close(selectFileStatement);
-            SQLiteHelper.close(connection);
         }
     }
 
@@ -198,7 +198,6 @@ public class SQLiteCacheModel2 implements CacheModel {
         } finally {
             SQLiteHelper.close(moveStatement);
             SQLiteHelper.close(tablesToMove);
-            SQLiteHelper.close(connection);
         }
 
     }
@@ -243,7 +242,6 @@ public class SQLiteCacheModel2 implements CacheModel {
         } finally{
             SQLiteHelper.close(readStatement);
             SQLiteHelper.close(readedData);
-            SQLiteHelper.close(connection);
         }
         return Optional.empty();
     }
@@ -269,7 +267,6 @@ public class SQLiteCacheModel2 implements CacheModel {
         } finally {
             SQLiteHelper.close(tablesNames);
             SQLiteHelper.close(selectTablesNamesStatement);
-            SQLiteHelper.close(connection);
         }
         return numberOfFiles;
     }
@@ -298,7 +295,6 @@ public class SQLiteCacheModel2 implements CacheModel {
     public void removeAllData() {
         removeFromDevice();
         getConnection();
-        SQLiteHelper.close(connection);
     }
 
     @Override
@@ -309,6 +305,7 @@ public class SQLiteCacheModel2 implements CacheModel {
 
     @Override
     public void removeFromDevice() {
+        SQLiteHelper.close(connection);
         File cacheModel = new File(cacheModelPath);
         if(!cacheModel.delete()){
             System.out.println("File "+cacheModelPath+" doesn't exist!");
