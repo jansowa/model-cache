@@ -4,9 +4,11 @@ import com.github.jansowa.dao.CacheModel;
 import com.github.jansowa.domain.FileBasicInfo;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
 
+import java.io.IOException;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -22,7 +24,7 @@ import java.util.logging.Logger;
 //All data in one table
 public class SQLiteCacheModel1 implements CacheModel {
     @Getter @Setter private long maxNumberOfFiles;
-    private String cacheModelPath; //TODO fix - cacheModelPath now can't include slash
+    private String cacheModelPath;
     private Connection connection;
     private final Properties pooledStatements;
 
@@ -234,6 +236,10 @@ public class SQLiteCacheModel1 implements CacheModel {
         if(!cacheModel.delete()){
             System.out.println("File "+cacheModelPath+" doesn't exist!");
         }
+        File parentDirectory = cacheModel.getParentFile();
+        while(parentDirectory!=null && parentDirectory.delete()){
+            parentDirectory = parentDirectory.getParentFile();
+        }
     }
 
     public void closeConnection(){
@@ -245,6 +251,11 @@ public class SQLiteCacheModel1 implements CacheModel {
 
         try{
             if(connection == null || connection.isClosed()) {
+                try {
+                    FileUtils.forceMkdirParent(new File(cacheModelPath));
+                } catch (IOException e) {
+                    e.printStackTrace();
+                }
                 Class.forName("org.sqlite.JDBC");
                 connection = DriverManager.getConnection("jdbc:sqlite:" + cacheModelPath, pooledStatements);
                 pragmaStatement = connection.createStatement();

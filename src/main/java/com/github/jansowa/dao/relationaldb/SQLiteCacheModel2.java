@@ -4,8 +4,10 @@ import com.github.jansowa.dao.CacheModel;
 import com.github.jansowa.domain.FileBasicInfo;
 import lombok.Getter;
 import lombok.Setter;
+import org.apache.commons.io.FileUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.sql.*;
 import java.util.Date;
 import java.util.Optional;
@@ -15,7 +17,7 @@ import java.util.logging.Logger;
 //one table for each folder
 public class SQLiteCacheModel2 implements CacheModel {
     @Getter @Setter private long maxNumberOfFiles;
-    private String cacheModelPath; //TODO fix - now cacheModelPath can't include slash
+    private String cacheModelPath;
     private Connection connection;
     private final Properties pooledStatements;
 
@@ -85,21 +87,24 @@ public class SQLiteCacheModel2 implements CacheModel {
     @Override
     public boolean contains(String filePath) {
         getConnection();
-        PreparedStatement containsStatement = null;
+        Statement containsStatement = null;
         ResultSet filesWithGivenPath = null;
         boolean isFileInDB = false;
         String folderPath = getFolderFromPath(filePath);
         String name = getNameFromPath(filePath);
         String extension = getExtensionFromPath(filePath);
+        String selectQuery = "SELECT id FROM '" + folderPath + "' "+
+                "WHERE name = '" + name + "' " +
+                "AND extension ";
+        if(extension==null){
+            selectQuery += "IS NULL";
+        } else{
+            selectQuery += "= '"+extension+"'";
+        }
 
         try{
-            containsStatement = connection.prepareStatement(
-                    "SELECT id FROM `" + folderPath + "` " +
-                            "WHERE name = ? " +
-                            " AND extension = ?");
-            containsStatement.setString(1, name);
-            containsStatement.setString(2, extension);
-            filesWithGivenPath = containsStatement.executeQuery();
+            containsStatement = connection.createStatement();
+            filesWithGivenPath = containsStatement.executeQuery(selectQuery);
             isFileInDB = filesWithGivenPath.next();
         } catch (SQLException e) {
             System.out.println("There is no file with path: "+filePath);
@@ -124,9 +129,9 @@ public class SQLiteCacheModel2 implements CacheModel {
         SQLiteHelper.close(connection);
     }
 
-    private void moveSingleFile(String sourcePath, String destinationPath) { //TODO - doesn't work for files without extension
+    private void moveSingleFile(String sourcePath, String destinationPath) {
         getConnection();
-        PreparedStatement selectFileStatement = null;
+        Statement selectFileStatement = null;
         ResultSet fileToMove = null;
 
         String sourceFolder = getFolderFromPath(sourcePath);
@@ -138,13 +143,18 @@ public class SQLiteCacheModel2 implements CacheModel {
 
 
         try{
-            selectFileStatement = connection.prepareStatement(
-                    "SELECT creationTime, url FROM `" + sourceFolder + "`" +
-                            "WHERE name = ? " +
-                            "AND extension = ?");
-            selectFileStatement.setString(1, sourceName);
-            selectFileStatement.setString(2, sourceExtension);
-            fileToMove = selectFileStatement.executeQuery();
+            selectFileStatement = connection.createStatement();
+            String selectQuery = "SELECT creationTime, url " +
+                    "FROM '" + sourceFolder + "' " +
+                    "WHERE name = '" + sourceName +"' " +
+                    "AND extension ";
+            if(sourceExtension==null){
+                selectQuery+="IS NULL";
+            }
+            else{
+                selectQuery+="= '"+sourceExtension+"'";
+            }
+            fileToMove = selectFileStatement.executeQuery(selectQuery);
 
             fileToMove.next();
             Date destinationCreationTime = new Date(fileToMove.getLong("creationTime"));
@@ -316,18 +326,23 @@ public class SQLiteCacheModel2 implements CacheModel {
         if(!cacheModel.delete()){
             System.out.println("File "+cacheModelPath+" doesn't exist!");
         }
+        File parentDirectory = cacheModel.getParentFile();
+        while(parentDirectory!=null && parentDirectory.delete()){
+            parentDirectory = parentDirectory.getParentFile();
+        }
     }
 
     private void getConnection(){
         Statement pragmaStatement = null;
         try{
             if(connection == null || connection.isClosed()) {
+                FileUtils.forceMkdirParent(new File(cacheModelPath));
                 Class.forName("org.sqlite.JDBC");
                 connection = DriverManager.getConnection("jdbc:sqlite:" + cacheModelPath, pooledStatements);
                 pragmaStatement = connection.createStatement();
                 pragmaStatement.execute("PRAGMA synchronous = OFF");
             }
-        } catch (ClassNotFoundException | SQLException e) {
+        } catch (ClassNotFoundException | SQLException | IOException e) {
             log(e);
         } finally {
             SQLiteHelper.close(pragmaStatement);

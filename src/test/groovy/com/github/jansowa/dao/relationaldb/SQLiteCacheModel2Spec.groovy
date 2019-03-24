@@ -11,7 +11,8 @@ class SQLiteCacheModel2Spec extends Specification{
     @Shared SQLiteCacheModel2 cacheModel
     @Shared private FileBasicInfo[] sampleData
     static final long MAX_NUMBER_OF_FILES = 1000
-    static final String CACHE_PATH = "SQLiteCacheModel2Test.db"
+    static final String CACHE_PATH = "sqlDir1/sqlDir3/SQLiteCacheModel2Test.db"
+    static final FileBasicInfo fileWithoutExtension = new FileBasicInfo("file", "/fol/file", null, "example.com", new Date(), new Date())
 
     def setupSpec()
     {
@@ -57,8 +58,11 @@ class SQLiteCacheModel2Spec extends Specification{
     {
         when:
             cacheModel.put(sampleData[0])
+            cacheModel.put(fileWithoutExtension)
 
         then:
+            cacheModel.numberOfFiles==2
+            cacheModel.contains(fileWithoutExtension.getFilePath())
             cacheModel.contains(sampleData[0].getFilePath())
     }
     void "Should read file"()
@@ -157,6 +161,20 @@ class SQLiteCacheModel2Spec extends Specification{
             cacheModel.contains(destinationFolder+paths[4]+"file4.txt")
     }
 
+    void "Should move single file (tests private moveSingleFile method)"()
+    {
+        given:
+            String sourcePath = fileWithoutExtension.getFilePath()
+            String destinationPath = "/fol2/file"
+            cacheModel.put(fileWithoutExtension)
+
+        when:
+            cacheModel.moveSingleFile(sourcePath, destinationPath)
+
+        then:
+            cacheModel.contains(destinationPath)
+    }
+
     void "Should get number of stored files"()
     {
         given:
@@ -229,16 +247,19 @@ class SQLiteCacheModel2Spec extends Specification{
             String path1 = "/first/second/file.txt"
             String path2 = "/folder/test.jpg"
             String path3 = "/src/main/java/main.java"
+            String path4 = "/fol1/fol2/fol3"
 
         when:
             String folder1 = cacheModel.getFolderFromPath(path1)
             String folder2 = cacheModel.getFolderFromPath(path2)
             String folder3 = cacheModel.getFolderFromPath(path3)
+            String folder4 = cacheModel.getFolderFromPath(path4)
 
         then:
             folder1 == "/first/second"
             folder2 == "/folder"
             folder3 == "/src/main/java"
+            folder4 == "/fol1/fol2"
     }
 
     void "Should return file name from paths"()

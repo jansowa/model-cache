@@ -8,7 +8,8 @@ class SQLiteCacheModel1Spec extends Specification{
     @Shared SQLiteCacheModel1 cacheModel
     @Shared private FileBasicInfo[] sampleData
     static final long MAX_NUMBER_OF_FILES = 1000
-    static final String CACHE_PATH = "SQLiteCacheModel1Test.db"
+    static final String CACHE_PATH = "sqlDir1/sqlDir2/SQLiteCacheModel1Test.db"
+    static final FileBasicInfo fileWithoutExtension = new FileBasicInfo("file", "/fol/file", null, "example.com", new Date(), new Date())
 
     def setupSpec()
     {
@@ -54,9 +55,12 @@ class SQLiteCacheModel1Spec extends Specification{
     {
         when:
             cacheModel.put(sampleData[0])
+            cacheModel.put(fileWithoutExtension)
 
         then:
+            cacheModel.numberOfFiles==2
             cacheModel.contains(sampleData[0].getFilePath())
+            cacheModel.contains(fileWithoutExtension.getFilePath())
     }
     void "Should read file"()
     {
@@ -113,16 +117,21 @@ class SQLiteCacheModel1Spec extends Specification{
     void "Should move single file from first to second path"()
     {
         given:
-            String destinationPath = "/test/destination"
+            String destinationPath1 = "/test/destination"
+            String destinationPath2 = "/fol2/file2"
             cacheModel.put(sampleData[0])
+            cacheModel.put(fileWithoutExtension)
 
         when:
-            cacheModel.movePath(sampleData[0].getFilePath(), destinationPath)
+            cacheModel.movePath(sampleData[0].getFilePath(), destinationPath1)
+            cacheModel.movePath(fileWithoutExtension.getFilePath(), destinationPath2)
 
         then:
-            cacheModel.contains(destinationPath)
+            cacheModel.contains(destinationPath1)
             !cacheModel.contains(sampleData[0].getFilePath())
-            cacheModel.getNumberOfFiles()==1
+            cacheModel.contains(destinationPath2)
+            !cacheModel.contains(fileWithoutExtension.getFilePath())
+            cacheModel.getNumberOfFiles()==2
     }
 
     void "Should move whole folder from first to second path"()
