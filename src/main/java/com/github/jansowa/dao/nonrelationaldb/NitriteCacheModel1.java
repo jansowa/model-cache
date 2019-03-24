@@ -19,6 +19,9 @@ public class NitriteCacheModel1 implements CacheModel {
     private Nitrite database;
     private NitriteCollection files;
 
+    private static final String LAST_USAGE_TIME = "lastUsageTime";
+    private static final String FILE_PATH = "filePath";
+
     public NitriteCacheModel1(long maxNumberOfFiles, String cacheModelPath){
         this.maxNumberOfFiles = maxNumberOfFiles;
         this.cacheModelPath = cacheModelPath;
@@ -28,7 +31,7 @@ public class NitriteCacheModel1 implements CacheModel {
     @Override
     public void put(FileBasicInfo file) {
         Document fileDocument = fileBasicInfoToDocument(file);
-        fileDocument.replace("lastUsageTime", new Date());
+        fileDocument.replace(LAST_USAGE_TIME, new Date());
         files.insert(fileDocument);
         if(getNumberOfFiles()>maxNumberOfFiles){
             removeOldestFile();
@@ -37,30 +40,30 @@ public class NitriteCacheModel1 implements CacheModel {
 
     @Override
     public void remove(String filePath) {
-        files.remove(Filters.eq("filePath", filePath));
+        files.remove(Filters.eq(FILE_PATH, filePath));
     }
 
     @Override
     public boolean contains(String filePath) {
-        Cursor foundFiles = files.find(Filters.eq("filePath", filePath));
+        Cursor foundFiles = files.find(Filters.eq(FILE_PATH, filePath));
         return foundFiles.size()>0;
     }
 
     @Override
     public void movePath(String sourcePath, String destinationPath) {
-        Cursor filesToMove = files.find(Filters.regex("filePath", "^" + sourcePath + ".*"));
+        Cursor filesToMove = files.find(Filters.regex(FILE_PATH, "^" + sourcePath + ".*"));
         for (Document singleFile: filesToMove) {
-            String currentFilePath = (String) singleFile.get("filePath");
+            String currentFilePath = (String) singleFile.get(FILE_PATH);
             String finalFilePath = destinationPath + currentFilePath.substring(sourcePath.length());
-            files.update(Filters.eq("filePath", currentFilePath),
-                    Document.createDocument("filePath", finalFilePath)
-                            .put("lastUsageTime", new Date()));
+            files.update(Filters.eq(FILE_PATH, currentFilePath),
+                    Document.createDocument(FILE_PATH, finalFilePath)
+                            .put(LAST_USAGE_TIME, new Date()));
         }
     }
 
     @Override
     public Optional<FileBasicInfo> read(String filePath) {
-        Cursor foundFiles = files.find(Filters.eq("filePath", filePath));
+        Cursor foundFiles = files.find(Filters.eq(FILE_PATH, filePath));
         Document fileDocument = foundFiles.firstOrDefault();
         if(fileDocument == null){
             return Optional.empty();
@@ -101,33 +104,33 @@ public class NitriteCacheModel1 implements CacheModel {
                 .filePath(cacheModelPath)
                 .openOrCreate("user", "password");
         files = database.getCollection("files");
-        files.createIndex("filePath", IndexOptions.indexOptions(IndexType.Unique, true));
+        files.createIndex(FILE_PATH, IndexOptions.indexOptions(IndexType.Unique, true));
     }
 
     private Document fileBasicInfoToDocument(FileBasicInfo fileInfos){
         return Document
                 .createDocument("name", fileInfos.getName())
-                .put("filePath", fileInfos.getFilePath())
+                .put(FILE_PATH, fileInfos.getFilePath())
                 .put("extension", fileInfos.getExtension())
                 .put("url", fileInfos.getUrl())
                 .put("creationTime", fileInfos.getCreationTime())
-                .put("lastUsageTime", fileInfos.getLastUsageTime());
+                .put(LAST_USAGE_TIME, fileInfos.getLastUsageTime());
     }
 
     private FileBasicInfo documentToFileBasicInfo(Document fileDocument){
         return FileBasicInfo.builder()
                 .name((String) fileDocument.get("name"))
-                .filePath((String) fileDocument.get("filePath"))
+                .filePath((String) fileDocument.get(FILE_PATH))
                 .extension((String) fileDocument.get("extension"))
                 .url((String) fileDocument.get("url"))
                 .creationTime((Date) fileDocument.get("creationTime"))
-                .lastUsageTime((Date) fileDocument.get("lastUsageTime"))
+                .lastUsageTime((Date) fileDocument.get(LAST_USAGE_TIME))
                 .build();
     }
 
     private void removeOldestFile() {
         Cursor lastFile = files.find(FindOptions
-                .sort("lastUsageTime", SortOrder.Ascending)
+                .sort(LAST_USAGE_TIME, SortOrder.Ascending)
                 .thenLimit(0, 1));
         files.remove(lastFile.firstOrDefault());
     }

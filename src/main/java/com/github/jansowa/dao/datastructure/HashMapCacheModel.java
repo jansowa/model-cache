@@ -15,7 +15,6 @@ import java.io.IOException;
 
 import java.util.*;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 public class HashMapCacheModel implements CacheModel, Serializable{
     @Getter private long maxNumberOfFiles;
@@ -139,9 +138,8 @@ public class HashMapCacheModel implements CacheModel, Serializable{
         return storedFiles
                 .values()
                 .stream()
-                .sorted((file1, file2) -> file1.getLastUsageTime().compareTo(file2.getLastUsageTime()))
-                .findFirst()
-                .get()
-                .getFilePath();
+                .min((file1, file2) -> file1.getLastUsageTime().compareTo(file2.getLastUsageTime()))
+                .map(FileBasicInfo::getFilePath)
+                .orElse(null);
     }
 }

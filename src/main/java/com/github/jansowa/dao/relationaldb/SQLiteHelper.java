@@ -4,6 +4,10 @@ import java.sql.*;
 import java.util.logging.Logger;
 
 public final class SQLiteHelper {
+    private SQLiteHelper(){
+        throw new IllegalStateException("Utility class");
+    }
+
     public static void close(Connection connection){
         try {
             connection.close();

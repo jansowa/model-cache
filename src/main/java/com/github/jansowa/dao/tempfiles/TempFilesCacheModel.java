@@ -11,7 +11,6 @@ import org.apache.commons.io.filefilter.TrueFileFilter;
 import java.io.File;
 import java.io.IOException;
 import java.util.Date;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.Optional;
 import java.util.logging.Logger;
@@ -52,7 +51,9 @@ public class TempFilesCacheModel implements CacheModel {
         File parentDirectory = fileToRemove.getParentFile();
         while(cacheModelPath.equals(parentDirectory.getPath()) &&
                 FileUtils.sizeOfDirectory(parentDirectory)==0){
-            parentDirectory.delete();
+            if(!parentDirectory.delete()){
+                System.out.println("Can't remove directory");
+            }
             parentDirectory=parentDirectory.getParentFile();
         }
     }
@@ -143,15 +144,13 @@ public class TempFilesCacheModel implements CacheModel {
 
     private void removeOldestFile() {
         File cacheModel = new File(cacheModelPath);
-        File oldestFile = FileUtils
-                .listFiles(cacheModel, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
+        String oldestFilePath = FileUtils.listFiles(cacheModel, TrueFileFilter.INSTANCE, TrueFileFilter.INSTANCE)
                 .stream()
-                .sorted((file1, file2) -> (int) (file1.lastModified() - file2.lastModified()))
-                .findFirst()
-                .get();
-        remove(oldestFile
-                .getPath()
-                .substring(cacheModelPath.length()));
+                .min((file1, file2) -> (int) (file1.lastModified() - file2.lastModified()))
+                .map(file -> file.getPath().substring(cacheModelPath.length()))
+                .orElse(null);
+
+        remove(oldestFilePath);
     }
 
     private int countFilesInDirectory(File directory){

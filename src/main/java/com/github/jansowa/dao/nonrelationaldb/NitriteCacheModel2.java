@@ -22,6 +22,8 @@ public class NitriteCacheModel2 {
     private Nitrite database;
     private ObjectRepository<NitriteFileBasicInfo> files;
 
+    private static final String FILE_PATH = "filePath";
+
     public NitriteCacheModel2(long maxNumberOfFiles, String cacheModelPath){
         this.maxNumberOfFiles = maxNumberOfFiles;
         this.cacheModelPath = cacheModelPath;
@@ -37,11 +39,11 @@ public class NitriteCacheModel2 {
     }
 
     public void remove(String filePath) {
-        files.remove(ObjectFilters.eq("filePath", filePath));
+        files.remove(ObjectFilters.eq(FILE_PATH, filePath));
     }
 
     public boolean contains(String filePath) {
-        Cursor<NitriteFileBasicInfo> foundFiles = files.find(ObjectFilters.eq("filePath", filePath));
+        Cursor<NitriteFileBasicInfo> foundFiles = files.find(ObjectFilters.eq(FILE_PATH, filePath));
 
         NitriteFileBasicInfo singleFile = foundFiles.firstOrDefault();
         if(singleFile==null){
@@ -53,7 +55,7 @@ public class NitriteCacheModel2 {
     }
 
     public void movePath(String sourcePath, String destinationPath) {
-        Cursor<NitriteFileBasicInfo> filesToMove = files.find(ObjectFilters.regex("filePath", "^" + sourcePath + ".*"));
+        Cursor<NitriteFileBasicInfo> filesToMove = files.find(ObjectFilters.regex(FILE_PATH, "^" + sourcePath + ".*"));
         for(NitriteFileBasicInfo singleFile: filesToMove){
             String currentFilePath = singleFile.getFilePath();
             String finalFilePath = destinationPath + currentFilePath.substring(sourcePath.length());
@@ -64,13 +66,13 @@ public class NitriteCacheModel2 {
                     singleFile.getUrl(),
                     singleFile.getCreationTime(),
                     new Date());
-            files.update(ObjectFilters.eq("filePath", currentFilePath),
+            files.update(ObjectFilters.eq(FILE_PATH, currentFilePath),
                     finalInfo);
         }
     }
 
     public Optional<NitriteFileBasicInfo> read(String filePath) {
-        Cursor<NitriteFileBasicInfo> foundFiles = files.find(ObjectFilters.eq("filePath", filePath));
+        Cursor<NitriteFileBasicInfo> foundFiles = files.find(ObjectFilters.eq(FILE_PATH, filePath));
         NitriteFileBasicInfo fileInfos = foundFiles.firstOrDefault();
         if(fileInfos!=null){
             fileInfos.setLastUsageTime(new Date());

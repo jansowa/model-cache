@@ -133,7 +133,6 @@ public class SQLiteCacheModel2 implements CacheModel {
         String sourceName = getNameFromPath(sourcePath);
         String sourceExtension = getExtensionFromPath(sourcePath);
 
-        String destinationFolder = getFolderFromPath(destinationPath);
         String destinationName = getNameFromPath(destinationPath);
         String destinationExtension = getExtensionFromPath(destinationPath);
 
@@ -171,33 +170,37 @@ public class SQLiteCacheModel2 implements CacheModel {
     private void moveWholeFolder(String sourceFolder, String destinationFolder){
         getConnection();
         Statement moveStatement = null;
+        Statement findStatement = null;
+        Statement deleteStatement = null;
         ResultSet tablesToMove = null;
 
         try{
-            moveStatement = connection.createStatement();
-            tablesToMove = moveStatement.executeQuery(
+            findStatement = connection.createStatement();
+            tablesToMove = findStatement.executeQuery(
                 "SELECT name "+
                         "FROM sqlite_master " +
                         "WHERE type = 'table' AND " +
                         "name LIKE '" + sourceFolder + "%';");
             long currentTime = new Date().getTime();
+            moveStatement = connection.createStatement();
+            deleteStatement = connection.createStatement();
             while(tablesToMove.next()){
                 String tableToMoveName = tablesToMove.getString(1);
-                moveStatement = connection.createStatement();
                 moveStatement.execute(
                         "UPDATE `" + tableToMoveName + "` " +
                                 "SET lastUsageTime = " + currentTime);
 
                 String destinationTable = destinationFolder + tableToMoveName.substring(sourceFolder.length());
-                moveStatement = connection.createStatement();
-                moveStatement.execute(
+                deleteStatement.execute(
                         "ALTER TABLE `" + tableToMoveName + "` " +
                                 "RENAME TO `" + destinationTable + "`;");
             }
         } catch (SQLException e) {
             log(e);
         } finally {
+            SQLiteHelper.close(findStatement);
             SQLiteHelper.close(moveStatement);
+            SQLiteHelper.close(deleteStatement);
             SQLiteHelper.close(tablesToMove);
         }
 
@@ -398,6 +401,7 @@ public class SQLiteCacheModel2 implements CacheModel {
         getConnection();
         ResultSet tablesNames = null;
         Statement removeOldestFileStatement = null;
+        ResultSet oldestInTable = null;
 
         try{
             removeOldestFileStatement = connection.createStatement();
@@ -412,7 +416,7 @@ public class SQLiteCacheModel2 implements CacheModel {
             while(tablesNames.next()){
                 tableName = tablesNames.getString(1);
 
-                ResultSet oldestInTable = removeOldestFileStatement.executeQuery(
+                oldestInTable = removeOldestFileStatement.executeQuery(
                         "SELECT min(lastUsageTime)" +
                                 "FROM `" + tableName + "`");
                 oldestInTable.next();
@@ -429,6 +433,7 @@ public class SQLiteCacheModel2 implements CacheModel {
         } finally {
             SQLiteHelper.close(tablesNames);
             SQLiteHelper.close(removeOldestFileStatement);
+            SQLiteHelper.close(oldestInTable);
         }
     }
 

@@ -28,7 +28,7 @@ public class CacheModelPerformanceRunner {
         CacheModelPerformanceRunner runner = new CacheModelPerformanceRunner();
         List<String> cacheModelsNames = new ArrayList<>();
         List<CacheModel> cacheModels = new ArrayList<>();
-        //TODO Here I will add all cache models and its names
+        //Add cache models and its names here.
 
         cacheModelsNames.add("Array List cache");
         ArrayListCacheModel arrayListCache = new ArrayListCacheModel(1000, "arrayList.ser");
